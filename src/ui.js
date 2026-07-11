@@ -152,7 +152,6 @@ function buildSetup() {
     addToggle(ol, 'opt-cat', 'Show Category to Imposter', 'e.g. "Food", "Animal" — vague, not the word', true);
     document.getElementById('opt-imp-auto').checked = true;
   } else {
-    addToggle(ol, 'opt-show-ck', 'Tell Cuckoos they are Cuckoos', "Off = blind mode: cuckoos don't know they're different", false);
     addToggle(ol, 'opt-cat-ck', 'Show Category on Cards', "Show the word category on each player's card", true);
   }
   addToggle(ol, 'opt-live-stats', 'Show Live Remaining Counts', 'Off = panel shows the starting numbers all game. On = counts update live each cycle.', false);
@@ -178,7 +177,6 @@ export function goToPeek() {
   players = names;
   opts = {
     showCatImp: document.getElementById('opt-cat') ? document.getElementById('opt-cat').checked : false,
-    showCkToSelf: document.getElementById('opt-show-ck') ? document.getElementById('opt-show-ck').checked : false,
     showCatCk: document.getElementById('opt-cat-ck') ? document.getElementById('opt-cat-ck').checked : true,
     liveStats: document.getElementById('opt-live-stats') ? document.getElementById('opt-live-stats').checked : false,
   };
@@ -230,13 +228,8 @@ function renderPeekCard() {
         wordHTML = `<div class="pk-word">${p.word}</div><div class="pk-cat">${G.entry.cat}</div>`;
       }
     } else {
-      if (p.isCuckoo && opts.showCkToSelf) {
-        wordHTML = `<div class="pk-badge ck">CUCKOO</div><div class="pk-word ck">${p.word}</div>`;
-        if (opts.showCatCk) wordHTML += `<div class="pk-cat">${G.entry.cat}</div>`;
-      } else {
-        wordHTML = `<div class="pk-word">${p.word}</div>`;
-        if (opts.showCatCk) wordHTML += `<div class="pk-cat">${G.entry.cat}</div>`;
-      }
+      wordHTML = `<div class="pk-word">${p.word}</div>`;
+      if (opts.showCatCk) wordHTML += `<div class="pk-cat">${G.entry.cat}</div>`;
     }
     card.innerHTML = `<div class="pk-name">${p.name}</div>
       <div class="pk-inst">Memorise your word, then pass the phone.</div>
