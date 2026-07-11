@@ -39,7 +39,7 @@ function renderPlayers() {
     const init = name.trim() ? name.trim()[0].toUpperCase() : '?';
     row.innerHTML = `<div class="p-av" id="pav-${i}">${init}</div>
       <input class="p-ni" value="${name}" placeholder="Player name"
-        oninput="updatePlayerName(${i}, this.value)">
+        onfocus="this.select()" oninput="updatePlayerName(${i}, this.value)">
       <button class="rm-btn" onclick="removePlayer(${i})">✕</button>`;
     list.appendChild(row);
   });
