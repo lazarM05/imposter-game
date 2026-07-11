@@ -9,7 +9,6 @@ let opts = {};
 let activeCats = new Set(ALL_CATS); // all on by default
 let G = {};
 let peekIdx = 0, peekUnlocked = false;
-let metaSelection = null; // 'yes'|'no'
 let selectedVoteIdx = null;
 
 // ==================== NAV ====================
@@ -254,7 +253,6 @@ function renderStatus() {
 
 function renderCycleBar() {
   const bar = document.getElementById('cycle-bar');
-  if (G.mode === 'imposter') { bar.style.display = 'none'; return; }
   bar.style.display = 'flex';
   const dots = document.getElementById('cycle-dots');
   dots.innerHTML = '';
@@ -268,7 +266,7 @@ function renderCycleBar() {
 function renderCards() {
   const grid = document.getElementById('cards-grid');
   grid.innerHTML = '';
-  const isVoting = G.phase === 'vote';
+  const isVoting = G.phase === 'play';
   G.players.forEach((p, i) => {
     const card = document.createElement('div');
     let cls = 'gp-card';
@@ -295,62 +293,25 @@ function renderCards() {
 
 // ==================== PHASE UI ====================
 function renderPhaseUI() {
-  document.getElementById('meta-vote-panel').style.display = 'none';
-  document.getElementById('ready-vote-panel').style.display = 'none';
   document.getElementById('vote-panel').style.display = 'none';
   document.getElementById('reveal-panel').style.display = 'none';
-  metaSelection = null;
   selectedVoteIdx = null;
 
   if (G.phase === 'play') {
-    if (G.mode === 'imposter') {
-      document.getElementById('meta-vote-panel').style.display = 'block';
-      document.getElementById('mvb-yes').className = 'mvb';
-      document.getElementById('mvb-no').className = 'mvb';
-      document.getElementById('mvote-confirm').style.display = 'none';
-      const active = G.players.filter(p => !p.eliminated).length;
-      document.getElementById('meta-note').textContent = `Raise hands — strict majority (>${Math.floor(active / 2)}) needed to vote. Ties = Skip.`;
-    } else {
-      document.getElementById('ready-vote-panel').style.display = 'block';
-    }
-  } else if (G.phase === 'vote') {
     document.getElementById('vote-panel').style.display = 'block';
     document.getElementById('vote-title').textContent =
       G.mode === 'imposter' ? '🗳️ WHO IS THE IMPOSTER?' : '🗳️ WHO IS THE CUCKOO?';
     document.getElementById('vote-confirm-btn').classList.remove('ready');
     document.getElementById('vote-hint').textContent = 'Tap a name to select. Tap another to change your mind.';
-    const tvb = document.getElementById('tied-vote-btn');
-    if (tvb) tvb.style.display = G.mode === 'imposter' ? 'block' : 'none';
-  }
-}
-
-// ==================== META VOTE (IMPOSTER) ====================
-export function selectMeta(choice) {
-  metaSelection = choice;
-  document.getElementById('mvb-yes').className = 'mvb' + (choice === 'yes' ? ' selected-yes' : '');
-  document.getElementById('mvb-no').className = 'mvb' + (choice === 'no' ? ' selected-no' : '');
-  document.getElementById('mvote-confirm').style.display = 'block';
-}
-export function confirmMeta() {
-  if (!metaSelection) return;
-  if (metaSelection === 'yes') {
-    G.phase = 'vote';
-    selectedVoteIdx = null;
-    renderCards();
-    renderPhaseUI();
-  } else {
-    G.cycle++;
-    G.phase = 'play';
-    renderGame();
+    document.getElementById('skip-vote-btn').style.display = G.mode === 'imposter' ? 'block' : 'none';
   }
 }
 
 // ==================== VOTE ====================
-export function startEliminationVote() {
-  G.phase = 'vote';
-  selectedVoteIdx = null;
-  renderCards();
-  renderPhaseUI();
+export function skipVote() {
+  G.cycle++;
+  G.phase = 'play';
+  renderGame();
 }
 function selectVote(idx) {
   selectedVoteIdx = idx;
@@ -364,30 +325,18 @@ export function confirmElimination() {
   G.phase = 'play';
 
   const result = checkEnd(G);
-
-  if (G.mode === 'imposter') {
-    triggerFinalReveal(result === 'continue' ? 'no_result' : result);
+  if (result === 'continue') {
+    G.cycle++;
+    renderGame();
   } else {
-    if (result === 'players_win' || result === 'cuckoo_wins') {
-      triggerFinalReveal(result);
-    } else {
-      G.cycle++;
-      renderGame();
-    }
+    triggerFinalReveal(result);
   }
-}
-
-export function confirmTiedVote() {
-  G._endResult = 'tied';
-  triggerFinalReveal('tied');
 }
 
 // ==================== REVEAL ====================
 function triggerFinalReveal(result) {
   G._endResult = result;
   G.phase = 'reveal';
-  document.getElementById('meta-vote-panel').style.display = 'none';
-  document.getElementById('ready-vote-panel').style.display = 'none';
   document.getElementById('vote-panel').style.display = 'none';
   renderCards();
   renderStatus();
