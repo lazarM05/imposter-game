@@ -104,7 +104,7 @@ function renderCatFilter() {
 // ==================== SETUP ====================
 function buildSetup() {
   const isI = mode === 'imposter';
-  document.getElementById('setup-mode-lbl').textContent = isI ? 'IMPOSTER' : 'CUCKOO';
+  document.getElementById('setup-mode-lbl').textContent = isI ? 'STANDARD' : 'CUCKOO';
   document.getElementById('setup-mode-lbl').className = 'gml ' + mode;
   document.getElementById('start-btn').className = 'btn-p' + (isI ? '' : ' teal');
   renderCatFilter();
@@ -148,7 +148,7 @@ export function goToPeek() {
   G = buildGameData(mode, players, entry);
   peekIdx = 0;
   peekUnlocked = false;
-  document.getElementById('peek-mode-lbl').textContent = mode === 'imposter' ? 'IMPOSTER' : 'CUCKOO';
+  document.getElementById('peek-mode-lbl').textContent = mode === 'imposter' ? 'STANDARD' : 'CUCKOO';
   document.getElementById('peek-mode-lbl').className = 'gml ' + mode;
   renderPeekProgress();
   renderPeekCard();
@@ -223,7 +223,7 @@ export function peekNext() {
 // ==================== GAME RENDER ====================
 function renderGame() {
   const isI = G.mode === 'imposter';
-  document.getElementById('game-mode-lbl').textContent = isI ? 'IMPOSTER' : 'CUCKOO';
+  document.getElementById('game-mode-lbl').textContent = isI ? 'STANDARD' : 'CUCKOO';
   document.getElementById('game-mode-lbl').className = 'gml ' + G.mode;
   renderStatus();
   renderCycleBar();
@@ -385,7 +385,7 @@ export function showGameOver() {
   document.getElementById('go-sub').textContent = `After ${G.cycle} cycle${G.cycle !== 1 ? 's' : ''} with ${G.players.length} players.`;
   const imp = G.mode === 'imposter' ? G.players.find(p => p.isImposter) : null;
   const cks = G.mode === 'cuckoo' ? G.players.filter(p => p.isCuckoo) : [];
-  let rows = `<div class="dr"><span class="dk">Mode</span><span class="dv">${G.mode === 'imposter' ? 'Imposter' : 'Cuckoo'}</span></div>
+  let rows = `<div class="dr"><span class="dk">Mode</span><span class="dv">${G.mode === 'imposter' ? 'Standard' : 'Cuckoo'}</span></div>
     <div class="dr"><span class="dk">Category</span><span class="dv">${G.entry.cat}</span></div>
     <div class="dr"><span class="dk">Players' word</span><span class="dv">${G.entry.w[0]}</span></div>`;
   if (G.mode === 'imposter') {
