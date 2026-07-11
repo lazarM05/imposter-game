@@ -118,7 +118,7 @@ export function onCkCountInput(value) {
 }
 
 export function addPlayer() {
-  players.push('Player ' + (players.length + 1));
+  players.unshift('Player ' + (players.length + 1));
   renderPlayers();
 }
 export function removePlayer(i) {
