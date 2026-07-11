@@ -80,30 +80,12 @@
   </div>
   <div class="cards-grid" id="cards-grid"></div>
 
-  <!-- Imposter: vote-to-vote -->
-  <div class="phase-panel" id="meta-vote-panel" style="display:none">
-    <div class="pp-title">END OF CYCLE — VOTE TO VOTE?</div>
-    <div class="mvote-options">
-      <button class="mvb" id="mvb-yes" onclick="selectMeta('yes')">👍 Yes, Vote</button>
-      <button class="mvb" id="mvb-no"  onclick="selectMeta('no')">👎 Skip</button>
-    </div>
-    <button class="mvote-confirm" id="mvote-confirm" onclick="confirmMeta()">CONFIRM</button>
-    <div class="meta-note" id="meta-note">Raise hands, then one person confirms the result.</div>
-  </div>
-
-  <!-- Cuckoo: ready to vote -->
-  <div class="phase-panel" id="ready-vote-panel" style="display:none">
-    <div class="pp-title">CYCLE COMPLETE</div>
-    <button class="ready-btn" onclick="startEliminationVote()">🗳️ Start Vote</button>
-    <div class="meta-note" style="margin-top:8px">Voting is mandatory each cycle.</div>
-  </div>
-
-  <!-- Elimination vote -->
+  <!-- Vote / elimination panel — cards are clickable from the start of every cycle -->
   <div class="phase-panel" id="vote-panel" style="display:none">
     <div class="pp-title" id="vote-title">🗳️ TAP A PLAYER TO VOTE</div>
     <div class="vote-hint" id="vote-hint">Tap a name to select. Tap another to change your mind.</div>
     <button class="vote-confirm-btn" id="vote-confirm-btn" onclick="confirmElimination()">CONFIRM ELIMINATION</button>
-    <button class="tied-vote-btn" id="tied-vote-btn" onclick="confirmTiedVote()" style="display:none">🤝 Tied Vote — No Elimination</button>
+    <button class="skip-vote-btn" id="skip-vote-btn" onclick="skipVote()" style="display:none">👎 Skip</button>
   </div>
 
   <!-- Final reveal -->
