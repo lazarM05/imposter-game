@@ -14,11 +14,8 @@ Object.assign(window, {
   goToPeek: ui.goToPeek,
   unlockPeek: ui.unlockPeek,
   peekNext: ui.peekNext,
-  selectMeta: ui.selectMeta,
-  confirmMeta: ui.confirmMeta,
-  startEliminationVote: ui.startEliminationVote,
+  skipVote: ui.skipVote,
   confirmElimination: ui.confirmElimination,
-  confirmTiedVote: ui.confirmTiedVote,
   showGameOver: ui.showGameOver,
   restartSame: ui.restartSame,
 });
