@@ -1,19 +1,21 @@
 // Pure game-state logic — no DOM access. Safe to unit test in isolation.
-import { rnd, shuffle } from './utils.js';
+import { shuffle } from './utils.js';
 
-export function buildGameData(mode, players, entry) {
+export function buildGameData(mode, players, entry, impCount = 1) {
   const n = players.length;
   if (mode === 'imposter') {
-    const impIdx = rnd(n);
+    const idxs = shuffle([...Array(n).keys()]);
+    const impSet = new Set(idxs.slice(0, impCount));
     return {
       mode: 'imposter',
       entry,
-      maxCycles: n - 2,
+      impCount,
+      maxCycles: n - 2 * impCount,
       players: players.map((name, i) => ({
         name,
-        isImposter: i === impIdx,
+        isImposter: impSet.has(i),
         eliminated: false,
-        word: i === impIdx ? null : entry.w[0],
+        word: impSet.has(i) ? null : entry.w[0],
       })),
       cycle: 1,
       phase: 'play',
@@ -45,10 +47,10 @@ export function buildGameData(mode, players, entry) {
 
 export function checkEnd(G) {
   if (G.mode === 'imposter') {
-    const imp = G.players.find(p => p.isImposter);
-    if (imp.eliminated) return 'players_win';
+    const impLeft = G.players.filter(p => p.isImposter && !p.eliminated).length;
     const nonImpLeft = G.players.filter(p => !p.isImposter && !p.eliminated).length;
-    if (nonImpLeft <= 1) return 'imposter_wins';
+    if (impLeft === 0) return 'players_win';
+    if (impLeft >= nonImpLeft) return 'imposter_wins';
     return 'continue';
   }
   const ckLeft = G.players.filter(p => p.isCuckoo && !p.eliminated).length;

@@ -3,6 +3,7 @@ import { buildGameData, checkEnd } from './game.js';
 
 const entry = { cat: 'Animal', w: ['Lion', 'Tiger'] };
 const players5 = ['A', 'B', 'C', 'D', 'E'];
+const players7 = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
 describe('buildGameData — imposter mode', () => {
   it('assigns exactly one imposter with no word; everyone else gets w[0]', () => {
@@ -25,6 +26,28 @@ describe('buildGameData — imposter mode', () => {
   it('computes maxCycles = n - 2 (eliminations needed for non-imposters to reach parity with 1 imposter)', () => {
     const G = buildGameData('imposter', players5, entry); // n=5
     expect(G.maxCycles).toBe(3);
+  });
+});
+
+describe('buildGameData — imposter mode (multi-imposter)', () => {
+  it('assigns exactly impCount imposters with no word; everyone else gets w[0]', () => {
+    const G = buildGameData('imposter', players7, entry, 2); // n=7
+    const imposters = G.players.filter(p => p.isImposter);
+    expect(imposters).toHaveLength(2);
+    for (const p of imposters) expect(p.word).toBeNull();
+    const others = G.players.filter(p => !p.isImposter);
+    expect(others).toHaveLength(5);
+    for (const p of others) expect(p.word).toBe('Lion');
+  });
+
+  it('stores impCount on the game data', () => {
+    const G = buildGameData('imposter', players7, entry, 2);
+    expect(G.impCount).toBe(2);
+  });
+
+  it('computes maxCycles = n - 2*impCount', () => {
+    const G = buildGameData('imposter', players7, entry, 2); // n=7
+    expect(G.maxCycles).toBe(3); // 7 - 2*2 = 3
   });
 });
 
@@ -76,6 +99,26 @@ describe('checkEnd — imposter mode', () => {
     const G = buildGameData('imposter', players5, entry); // 4 non-imposters
     G.players.filter(p => !p.isImposter).slice(0, 3).forEach(p => (p.eliminated = true)); // 1 left
     expect(checkEnd(G)).toBe('imposter_wins');
+  });
+});
+
+describe('checkEnd — imposter mode (multi-imposter)', () => {
+  it('continue when eliminations so far leave impLeft < nonImpLeft', () => {
+    const G = buildGameData('imposter', players7, entry, 2); // 5 non-imposters, 2 imposters
+    G.players.filter(p => !p.isImposter).slice(0, 1).forEach(p => (p.eliminated = true)); // 4 non-imp left
+    expect(checkEnd(G)).toBe('continue');
+  });
+
+  it('imposter_wins when impLeft >= nonImpLeft', () => {
+    const G = buildGameData('imposter', players7, entry, 2); // 5 non-imposters, 2 imposters
+    G.players.filter(p => !p.isImposter).slice(0, 3).forEach(p => (p.eliminated = true)); // 2 non-imp left, 2 imp left
+    expect(checkEnd(G)).toBe('imposter_wins');
+  });
+
+  it('players_win when all imposters are eliminated', () => {
+    const G = buildGameData('imposter', players7, entry, 2);
+    G.players.filter(p => p.isImposter).forEach(p => (p.eliminated = true));
+    expect(checkEnd(G)).toBe('players_win');
   });
 });
 
