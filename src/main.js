@@ -18,6 +18,9 @@ Object.assign(window, {
   confirmElimination: ui.confirmElimination,
   showGameOver: ui.showGameOver,
   restartSame: ui.restartSame,
+  onImpAutoToggle: ui.onImpAutoToggle,
+  onImpCountInput: ui.onImpCountInput,
+  imposterGuessedWord: ui.imposterGuessedWord,
 });
 
 ui.initPlayers();
