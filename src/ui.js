@@ -110,7 +110,7 @@ function refreshInfo() {
     const impCount = impCountEl ? (parseInt(impCountEl.value, 10) || 1) : 1;
     const maxCycles = n - 2 * impCount;
     document.getElementById('setup-info').innerHTML =
-      `<strong>How it works:</strong> ${impCount > 1 ? `${impCount} players are Imposters` : 'One player is the Imposter'} — they get no word, just the category (if enabled). Everyone gives associations each cycle. Each cycle, vote to eliminate someone or skip. Players win by eliminating all Imposters; Imposters win by surviving until they equal or outnumber the remaining players, or by correctly guessing the word out loud. With ${n} players: up to <strong>${maxCycles} cycle${maxCycles !== 1 ? 's' : ''}</strong>.`;
+      `<strong>How it works:</strong> ${impCount > 1 ? `${impCount} players are Imposters` : 'One player is the Imposter'} — they get no word, just the category (if enabled). Everyone gives associations each cycle. Each cycle, vote to eliminate someone or skip. Players win by eliminating all Imposters. Imposters win if their count equals or exceeds the remaining regular (non-Imposter) players, or if they correctly guess the word out loud. With ${n} players and ${impCount} imposter${impCount > 1 ? 's' : ''}: up to <strong>${maxCycles} cycle${maxCycles !== 1 ? 's' : ''}</strong>.`;
   } else {
     const c = Math.max(1, Math.floor(n / 3));
     const stopAt = Math.ceil(n / 2);
