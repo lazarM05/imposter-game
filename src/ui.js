@@ -116,6 +116,7 @@ function buildSetup() {
     addToggle(ol, 'opt-show-ck', 'Tell Cuckoos they are Cuckoos', "Off = blind mode: cuckoos don't know they're different", false);
     addToggle(ol, 'opt-cat-ck', 'Show Category on Cards', "Show the word category on each player's card", true);
   }
+  addToggle(ol, 'opt-live-stats', 'Show Live Remaining Counts', 'Off = panel shows the starting numbers all game. On = counts update live each cycle.', false);
   renderPlayers();
 }
 
@@ -140,6 +141,7 @@ export function goToPeek() {
     showCatImp: document.getElementById('opt-cat') ? document.getElementById('opt-cat').checked : false,
     showCkToSelf: document.getElementById('opt-show-ck') ? document.getElementById('opt-show-ck').checked : false,
     showCatCk: document.getElementById('opt-cat-ck') ? document.getElementById('opt-cat-ck').checked : true,
+    liveStats: document.getElementById('opt-live-stats') ? document.getElementById('opt-live-stats').checked : false,
   };
   const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
   const entry = pool[rnd(pool.length)];
@@ -231,25 +233,37 @@ function renderGame() {
 
 function renderStatus() {
   const bar = document.getElementById('status-bar');
-  const active = G.players.filter(p => !p.eliminated).length;
+  const n = G.players.length;
+  const noteHTML = `<div class="stat-note">${opts.liveStats ? 'LIVE' : 'AT THE START'}</div>`;
   if (G.mode === 'imposter') {
-    bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${active}</div><div class="stat-lbl">Active</div></div>
+    const startingPl = n - 1;
+    const activePl = G.players.filter(p => !p.isImposter && !p.eliminated).length;
+    const plVal = opts.liveStats ? `${activePl}/${startingPl}` : `${startingPl}`;
+    const impAlive = G.players.some(p => p.isImposter && !p.eliminated) ? 1 : 0;
+    const impVal = opts.liveStats ? `${impAlive}/1` : '1';
+    bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-r">1</div><div class="stat-lbl">Imposter</div></div>
+      <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">Imposter</div></div>
       <div class="sdiv"></div>
       <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-y">${G.cycle}</div><div class="stat-lbl">Cycle</div></div>`;
+      <div class="stat"><div class="stat-val sv-y">${G.cycle}</div><div class="stat-lbl">Cycle</div></div>
+      ${noteHTML}`;
   } else {
-    const ck = G.numCk; // frozen at start — don't reveal if cuckoo was eliminated
-    const pl = G.players.filter(p => !p.isCuckoo && !p.eliminated).length;
-    bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${pl}</div><div class="stat-lbl">Players</div></div>
+    const startingPl = n - G.numCk;
+    const activePl = G.players.filter(p => !p.isCuckoo && !p.eliminated).length;
+    const plVal = opts.liveStats ? `${activePl}/${startingPl}` : `${startingPl}`;
+    const startingCk = G.numCk;
+    const activeCk = G.players.filter(p => p.isCuckoo && !p.eliminated).length;
+    const ckVal = opts.liveStats ? `${activeCk}/${startingCk}` : `${startingCk}`;
+    bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-t">${ck}</div><div class="stat-lbl">Cuckoos</div></div>
+      <div class="stat"><div class="stat-val sv-t">${ckVal}</div><div class="stat-lbl">Cuckoos</div></div>
       <div class="sdiv"></div>
       <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>`;
+      <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>
+      ${noteHTML}`;
   }
 }
 
