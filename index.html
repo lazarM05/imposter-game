@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cuckoo</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- HOME -->
+<div class="screen active" id="home-screen">
+  <div style="margin-top:20px">
+    <div class="logo"><span class="wi">IMPOSTER</span></div>
+    <div class="logo" style="margin-top:-8px"><span class="wc">CUCKOO</span></div>
+  </div>
+  <p class="tagline">Two games. One bluffer.</p>
+  <div class="mode-grid" style="margin-top:8px">
+    <div class="mode-card mi" onclick="selectMode('imposter')">
+      <div class="mode-icon">🕵️</div>
+      <div class="mode-name">Imposter</div>
+      <div class="mode-desc">One player gets no word. One chance to vote — majority decides.</div>
+    </div>
+    <div class="mode-card mc" onclick="selectMode('cuckoo')">
+      <div class="mode-icon">🐦</div>
+      <div class="mode-name">Cuckoo</div>
+      <div class="mode-desc">Everyone gets a word. Cuckoos blend in — they may not know they're different.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="screen" id="setup-screen">
+  <div class="topbar" style="width:100%">
+    <div class="gml" id="setup-mode-lbl">IMPOSTER</div>
+    <button class="btn-sm" onclick="goHome()">← Back</button>
+  </div>
+  <div class="sc">
+    <div class="st">👥 Players</div>
+    <div class="player-list" id="player-list"></div>
+    <button class="add-btn" onclick="addPlayer()">＋ Add Player</button>
+  </div>
+  <div class="sc">
+    <div class="st">📦 Word Categories</div>
+    <div class="cat-filter" id="cat-filter"></div>
+  </div>
+  <div class="sc">
+    <div class="st">⚙️ Options</div>
+    <div class="toggle-list" id="options-list"></div>
+  </div>
+  <div class="info-box" id="setup-info"></div>
+  <p class="err" id="err-msg"></p>
+  <button class="btn-p" id="start-btn" onclick="goToPeek()">SET UP WORDS</button>
+</div>
+
+<!-- PEEK -->
+<div class="screen" id="peek-screen">
+  <div class="topbar" style="width:100%">
+    <div class="gml" id="peek-mode-lbl">IMPOSTER</div>
+    <button class="btn-sm" onclick="goSetup()">← Setup</button>
+  </div>
+  <div class="peek-wrap">
+    <div class="peek-card" id="peek-card"></div>
+    <div class="pk-prog" id="pk-prog"></div>
+    <button class="pk-btn-unlock" id="pk-unlock-btn" onclick="unlockPeek()" style="display:none">🔓 I'm ready — show my word</button>
+    <button class="pk-btn-next" id="pk-next-btn" onclick="peekNext()" style="display:none">DONE → Pass to next player</button>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="game-screen">
+  <div class="topbar" style="width:100%">
+    <div class="gml" id="game-mode-lbl">IMPOSTER</div>
+    <button class="btn-sm" onclick="goHome()">✕ End Game</button>
+  </div>
+  <div class="status-bar" id="status-bar"></div>
+  <div class="cycle-bar" id="cycle-bar" style="display:none">
+    <div class="cycle-lbl">CYCLE</div>
+    <div class="cycle-dots" id="cycle-dots"></div>
+  </div>
+  <div class="cards-grid" id="cards-grid"></div>
+
+  <!-- Imposter: vote-to-vote -->
+  <div class="phase-panel" id="meta-vote-panel" style="display:none">
+    <div class="pp-title">END OF CYCLE — VOTE TO VOTE?</div>
+    <div class="mvote-options">
+      <button class="mvb" id="mvb-yes" onclick="selectMeta('yes')">👍 Yes, Vote</button>
+      <button class="mvb" id="mvb-no"  onclick="selectMeta('no')">👎 Skip</button>
+    </div>
+    <button class="mvote-confirm" id="mvote-confirm" onclick="confirmMeta()">CONFIRM</button>
+    <div class="meta-note" id="meta-note">Raise hands, then one person confirms the result.</div>
+  </div>
+
+  <!-- Cuckoo: ready to vote -->
+  <div class="phase-panel" id="ready-vote-panel" style="display:none">
+    <div class="pp-title">CYCLE COMPLETE</div>
+    <button class="ready-btn" onclick="startEliminationVote()">🗳️ Start Vote</button>
+    <div class="meta-note" style="margin-top:8px">Voting is mandatory each cycle.</div>
+  </div>
+
+  <!-- Elimination vote -->
+  <div class="phase-panel" id="vote-panel" style="display:none">
+    <div class="pp-title" id="vote-title">🗳️ TAP A PLAYER TO VOTE</div>
+    <div class="vote-hint" id="vote-hint">Tap a name to select. Tap another to change your mind.</div>
+    <button class="vote-confirm-btn" id="vote-confirm-btn" onclick="confirmElimination()">CONFIRM ELIMINATION</button>
+    <button class="tied-vote-btn" id="tied-vote-btn" onclick="confirmTiedVote()" style="display:none">🤝 Tied Vote — No Elimination</button>
+  </div>
+
+  <!-- Final reveal -->
+  <div class="reveal-panel" id="reveal-panel" style="display:none">
+    <div class="reveal-title" id="reveal-title">🎭 END OF GAME</div>
+    <div class="reveal-sub" id="reveal-sub"></div>
+    <button class="btn-p" style="margin-top:18px;max-width:100%" onclick="showGameOver()">SEE RESULTS</button>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="screen" id="go-screen">
+  <div class="go-icon" id="go-icon"></div>
+  <div class="go-title" id="go-title"></div>
+  <div class="go-sub" id="go-sub"></div>
+  <div class="go-det" id="go-det"></div>
+  <div class="go-det" id="go-player-reveal" style="margin-top:0"></div>
+  <button class="btn-p" onclick="goHome()" style="margin-top:8px">🏠 Main Menu</button>
+  <button class="btn-o" onclick="restartSame()">↺ Play Again</button>
+</div>
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
