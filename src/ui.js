@@ -28,7 +28,7 @@ export function selectMode(m) {
 export function restartSame() { buildSetup(); show('setup-screen'); }
 
 // ==================== PLAYERS ====================
-export function initPlayers() { players = ['Player 1', 'Player 2', 'Player 3']; }
+export function initPlayers() { players = ['Player 3', 'Player 2', 'Player 1']; }
 
 function renderPlayers() {
   const list = document.getElementById('player-list');
@@ -122,7 +122,7 @@ export function addPlayer() {
   renderPlayers();
 }
 export function removePlayer(i) {
-  if (players.length <= 2) return;
+  if (players.length <= 3) return;
   players.splice(i, 1);
   renderPlayers();
 }
