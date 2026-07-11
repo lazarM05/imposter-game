@@ -1,6 +1,6 @@
 # Imposter/Cuckoo — Architectural Guide
 
-A phone-passing, in-person party game of word-association social deduction ("Imposter" and "Cuckoo" modes) for hangouts and groups — teenagers through all ages. Built solo, for friends first, with an eye toward publishing on the Google Play Store.
+A phone-passing, in-person party game of word-association social deduction ("Standard" and "Cuckoo" modes) for hangouts and groups — teenagers through all ages. Built solo, for friends first, with an eye toward publishing on the Google Play Store.
 
 ## Maintaining this file
 
@@ -61,6 +61,12 @@ This file is read by Claude at the start of every session. Keep it accurate.
 ### Word bank is 99 pairs, not 100
 The GDD says "~100 word pairs" but the actual `ALL_WORDS` array in `words.js` has 99 — verified directly against the original prototype source. The `words.test.js` assertion was written to match the real count. If you add or remove word pairs, update that test's expected count too.
 
+### "Standard" mode's display name diverges from its internal key
+The mode originally called "Imposter" was renamed to "Standard" in the UI (home screen, screen-topbar badges, results screen), but the internal `mode` string is still `'imposter'` everywhere — `game.js`'s `mode` param/`G.mode`, CSS classes (`.mi`, `.wi`, `.gml.imposter`), and all test fixtures. Only the *display* label changed, deliberately, to avoid unrelated churn. The in-game **Imposter role** (the character a player can draw) is a separate concept from the mode's branding name and was never renamed — "IMPOSTER" badges, "WHO IS THE IMPOSTER?", "IMPOSTER WINS!" etc. all still say Imposter on purpose. Cuckoo mode's key and display name still match.
+
+### Imposter/Cuckoo count is configurable via a shared Auto-or-manual pattern
+Both modes let the player set how many Imposters/Cuckoos are in play from the Setup screen: an "Auto" checkbox (default on) fills a number input with the 1:3 ratio (`Math.max(1, Math.floor(n/3))`, computed once in `ui.js`'s `impCountCap()` and reused by both modes' render/handler functions — don't duplicate this math), or unchecking it allows manual entry capped at that same ratio as a ceiling. `game.js`'s `buildGameData(mode, players, entry, count)` takes this as a single shared 4th param (meaning differs by `mode`), and both mode branches of `checkEnd` are intentionally symmetric (`impLeft`/`nonImpLeft` vs `ckLeft`/`plLeft`) so the parity win condition and `maxCycles = n - 2*count` formula are identical in shape. If you add a similar configurable-count feature elsewhere, follow this same pattern rather than inventing a new one.
+
 ---
 
 ## Conventions
@@ -101,7 +107,7 @@ Use `Grep` to find tasks by keyword rather than reading the whole file.
 
 ## Running / Build Protocol
 
-- **Run:** `npm run dev` (Vite dev server, default `http://localhost:5173/`). `npm test` runs the Vitest suite (`words`/`utils`/`game` — 16 tests). `npm run build` produces the production bundle in `dist/`.
+- **Run:** `npm run dev` (Vite dev server, default `http://localhost:5173/`). `npm test` runs the Vitest suite (`words`/`utils`/`game` — 28 tests). `npm run build` produces the production bundle in `dist/`.
 - **Session start check:** Node.js/npm must be on `PATH`. If a shell tool reports `node`/`npm` not found, prepend `C:\Program Files\nodejs` to `PATH` for that shell invocation (this environment did not have Node preinstalled — it was added via `winget` mid-session and doesn't always propagate to already-running shells).
 - **After changes:** Don't re-verify automatically after every edit — see Iteration Mode below. `game.js`/`utils.js`/`words.js` changes should get `npm test` run before committing, since those are the tested modules.
 
