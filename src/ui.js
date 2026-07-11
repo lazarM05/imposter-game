@@ -304,7 +304,7 @@ function renderGame() {
 function renderStatus() {
   const bar = document.getElementById('status-bar');
   const n = G.players.length;
-  const noteHTML = `<div class="stat-note">${opts.liveStats ? 'LIVE' : 'AT THE START'}</div>`;
+  const noteHTML = `<div class="stat-note">‹ ${opts.liveStats ? 'LIVE' : 'AT THE START'} ›</div>`;
   if (G.mode === 'imposter') {
     const startingPl = n - G.impCount;
     const activePl = G.players.filter(p => !p.isImposter && !p.eliminated).length;
@@ -313,13 +313,12 @@ function renderStatus() {
     const impVal = opts.liveStats ? `${impAlive}/${G.impCount}` : `${G.impCount}`;
     const impLbl = G.impCount > 1 ? 'Imposters' : 'Imposter';
     bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-      <div class="sdiv"></div>
+      ${noteHTML}
       <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
       <div class="sdiv"></div>
       <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-y">${G.cycle}</div><div class="stat-lbl">Cycle</div></div>
-      ${noteHTML}`;
+      <div class="stat"><div class="stat-val sv-y">${G.cycle}</div><div class="stat-lbl">Cycle</div></div>`;
   } else {
     const startingPl = n - G.numCk;
     const activePl = G.players.filter(p => !p.isCuckoo && !p.eliminated).length;
@@ -328,13 +327,12 @@ function renderStatus() {
     const activeCk = G.players.filter(p => p.isCuckoo && !p.eliminated).length;
     const ckVal = opts.liveStats ? `${activeCk}/${startingCk}` : `${startingCk}`;
     bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-      <div class="sdiv"></div>
+      ${noteHTML}
       <div class="stat"><div class="stat-val sv-t">${ckVal}</div><div class="stat-lbl">Cuckoos</div></div>
       <div class="sdiv"></div>
       <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>
-      ${noteHTML}`;
+      <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>`;
   }
 }
 
