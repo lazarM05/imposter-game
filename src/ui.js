@@ -69,8 +69,7 @@ export function updatePlayerName(i, value) {
 function refreshInfo() {
   const n = players.length;
   if (mode === 'imposter') {
-    const stopAt = Math.ceil(n / 2);
-    const maxCycles = n - stopAt;
+    const maxCycles = n - 2;
     document.getElementById('setup-info').innerHTML =
       `<strong>How it works:</strong> One player is the Imposter — they get no word, just the category (if enabled). Everyone gives associations each cycle. Each cycle, vote to eliminate someone or skip. Players win by catching the Imposter; the Imposter wins by outlasting everyone down to the last player. With ${n} players: up to <strong>${maxCycles} cycle${maxCycles !== 1 ? 's' : ''}</strong>.`;
   } else {

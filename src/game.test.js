@@ -22,9 +22,9 @@ describe('buildGameData — imposter mode', () => {
     expect(G._endResult).toBeNull();
   });
 
-  it('computes maxCycles = n - ceil(n/2), same formula as cuckoo mode', () => {
-    const G = buildGameData('imposter', players5, entry); // n=5, ceil(5/2)=3
-    expect(G.maxCycles).toBe(2);
+  it('computes maxCycles = n - 2 (eliminations needed for non-imposters to reach parity with 1 imposter)', () => {
+    const G = buildGameData('imposter', players5, entry); // n=5
+    expect(G.maxCycles).toBe(3);
   });
 });
 

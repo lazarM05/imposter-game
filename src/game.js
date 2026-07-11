@@ -5,12 +5,10 @@ export function buildGameData(mode, players, entry) {
   const n = players.length;
   if (mode === 'imposter') {
     const impIdx = rnd(n);
-    const stopAt = Math.ceil(n / 2);
     return {
       mode: 'imposter',
       entry,
-      stopAt,
-      maxCycles: n - stopAt,
+      maxCycles: n - 2,
       players: players.map((name, i) => ({
         name,
         isImposter: i === impIdx,
