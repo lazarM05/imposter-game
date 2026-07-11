@@ -43,6 +43,43 @@ function renderPlayers() {
       <button class="rm-btn" onclick="removePlayer(${i})">✕</button>`;
     list.appendChild(row);
   });
+  renderImpCountBlock();
+  refreshInfo();
+}
+
+// 1:3 imposter-to-player ratio cap — same formula Cuckoo mode uses for its own count.
+function impCountCap(n) { return Math.max(1, Math.floor(n / 3)); }
+
+function renderImpCountBlock() {
+  const block = document.getElementById('imp-count-block');
+  if (mode !== 'imposter') {
+    block.style.display = 'none';
+    return;
+  }
+  block.style.display = 'block';
+  const n = players.length;
+  const cap = impCountCap(n);
+  const input = document.getElementById('opt-imp-count');
+  const auto = document.getElementById('opt-imp-auto');
+  input.min = 1;
+  input.max = cap;
+  if (auto.checked) {
+    input.value = cap;
+    input.disabled = true;
+  } else {
+    input.disabled = false;
+    let v = parseInt(input.value, 10);
+    if (isNaN(v)) v = 1;
+    input.value = Math.min(Math.max(1, v), cap);
+  }
+}
+
+export function onImpAutoToggle() { renderImpCountBlock(); refreshInfo(); }
+export function onImpCountInput(value) {
+  const cap = impCountCap(players.length);
+  let v = parseInt(value, 10);
+  if (isNaN(v)) v = 1;
+  document.getElementById('opt-imp-count').value = Math.min(Math.max(1, v), cap);
   refreshInfo();
 }
 
@@ -69,9 +106,11 @@ export function updatePlayerName(i, value) {
 function refreshInfo() {
   const n = players.length;
   if (mode === 'imposter') {
-    const maxCycles = n - 2;
+    const impCountEl = document.getElementById('opt-imp-count');
+    const impCount = impCountEl ? (parseInt(impCountEl.value, 10) || 1) : 1;
+    const maxCycles = n - 2 * impCount;
     document.getElementById('setup-info').innerHTML =
-      `<strong>How it works:</strong> One player is the Imposter — they get no word, just the category (if enabled). Everyone gives associations each cycle. Each cycle, vote to eliminate someone or skip. Players win by catching the Imposter; the Imposter wins by outlasting everyone down to the last player. With ${n} players: up to <strong>${maxCycles} cycle${maxCycles !== 1 ? 's' : ''}</strong>.`;
+      `<strong>How it works:</strong> ${impCount > 1 ? `${impCount} players are Imposters` : 'One player is the Imposter'} — they get no word, just the category (if enabled). Everyone gives associations each cycle. Each cycle, vote to eliminate someone or skip. Players win by eliminating all Imposters; Imposters win by surviving until they equal or outnumber the remaining players, or by correctly guessing the word out loud. With ${n} players: up to <strong>${maxCycles} cycle${maxCycles !== 1 ? 's' : ''}</strong>.`;
   } else {
     const c = Math.max(1, Math.floor(n / 3));
     const stopAt = Math.ceil(n / 2);
@@ -111,6 +150,7 @@ function buildSetup() {
   ol.innerHTML = '';
   if (isI) {
     addToggle(ol, 'opt-cat', 'Show Category to Imposter', 'e.g. "Food", "Animal" — vague, not the word', true);
+    document.getElementById('opt-imp-auto').checked = true;
   } else {
     addToggle(ol, 'opt-show-ck', 'Tell Cuckoos they are Cuckoos', "Off = blind mode: cuckoos don't know they're different", false);
     addToggle(ol, 'opt-cat-ck', 'Show Category on Cards', "Show the word category on each player's card", true);
@@ -144,7 +184,10 @@ export function goToPeek() {
   };
   const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
   const entry = pool[rnd(pool.length)];
-  G = buildGameData(mode, players, entry);
+  const impCount = mode === 'imposter' && document.getElementById('opt-imp-count')
+    ? (parseInt(document.getElementById('opt-imp-count').value, 10) || 1)
+    : 1;
+  G = buildGameData(mode, players, entry, impCount);
   peekIdx = 0;
   peekUnlocked = false;
   document.getElementById('peek-mode-lbl').textContent = mode === 'imposter' ? 'STANDARD' : 'CUCKOO';
@@ -235,14 +278,15 @@ function renderStatus() {
   const n = G.players.length;
   const noteHTML = `<div class="stat-note">${opts.liveStats ? 'LIVE' : 'AT THE START'}</div>`;
   if (G.mode === 'imposter') {
-    const startingPl = n - 1;
+    const startingPl = n - G.impCount;
     const activePl = G.players.filter(p => !p.isImposter && !p.eliminated).length;
     const plVal = opts.liveStats ? `${activePl}/${startingPl}` : `${startingPl}`;
-    const impAlive = G.players.some(p => p.isImposter && !p.eliminated) ? 1 : 0;
-    const impVal = opts.liveStats ? `${impAlive}/1` : '1';
+    const impAlive = G.players.filter(p => p.isImposter && !p.eliminated).length;
+    const impVal = opts.liveStats ? `${impAlive}/${G.impCount}` : `${G.impCount}`;
+    const impLbl = G.impCount > 1 ? 'Imposters' : 'Imposter';
     bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">Imposter</div></div>
+      <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
       <div class="sdiv"></div>
       <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
       <div class="sdiv"></div>
@@ -319,6 +363,7 @@ function renderPhaseUI() {
     document.getElementById('vote-confirm-btn').classList.remove('ready');
     document.getElementById('vote-hint').textContent = 'Tap a name to select. Tap another to change your mind.';
     document.getElementById('skip-vote-btn').style.display = G.mode === 'imposter' ? 'block' : 'none';
+    document.getElementById('guess-btn').style.display = G.mode === 'imposter' ? 'block' : 'none';
   }
 }
 
@@ -348,6 +393,8 @@ export function confirmElimination() {
   }
 }
 
+export function imposterGuessedWord() { triggerFinalReveal('imposter_guessed'); }
+
 // ==================== REVEAL ====================
 function triggerFinalReveal(result) {
   G._endResult = result;
@@ -363,6 +410,7 @@ function triggerFinalReveal(result) {
   let sub = '';
   if (result === 'players_win') sub = 'The right person was eliminated. Tap "See Results" to reveal everyone\'s words.';
   else if (result === 'imposter_wins') sub = 'The wrong person was eliminated — the imposter survived. Tap "See Results" to see the truth.';
+  else if (result === 'imposter_guessed') sub = 'The Imposter correctly guessed the word! Tap "See Results" to see the truth.';
   else if (result === 'cuckoo_wins') sub = 'The cuckoos blended in long enough. Tap "See Results" to reveal who was who.';
   else if (result === 'tied') sub = 'The vote was tied — no one was eliminated. The game ends here. Tap "See Results" to reveal.';
   else sub = 'Tap "See Results" to reveal everyone\'s words.';
@@ -375,20 +423,20 @@ function triggerFinalReveal(result) {
 export function showGameOver() {
   const result = G._endResult;
   show('go-screen');
-  const icons = { players_win: '🏆', imposter_wins: '🕵️', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝' };
-  const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE' };
-  const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)' };
+  const icons = { players_win: '🏆', imposter_wins: '🕵️', imposter_guessed: '🎯', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝' };
+  const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE' };
+  const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', imposter_guessed: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)' };
   document.getElementById('go-icon').textContent = icons[result] || '🎭';
   document.getElementById('go-title').textContent = titles[result] || 'GAME OVER';
   document.getElementById('go-title').style.color = colors[result] || 'var(--text)';
   document.getElementById('go-sub').textContent = `After ${G.cycle} cycle${G.cycle !== 1 ? 's' : ''} with ${G.players.length} players.`;
-  const imp = G.mode === 'imposter' ? G.players.find(p => p.isImposter) : null;
+  const imps = G.mode === 'imposter' ? G.players.filter(p => p.isImposter) : [];
   const cks = G.mode === 'cuckoo' ? G.players.filter(p => p.isCuckoo) : [];
   let rows = `<div class="dr"><span class="dk">Mode</span><span class="dv">${G.mode === 'imposter' ? 'Standard' : 'Cuckoo'}</span></div>
     <div class="dr"><span class="dk">Category</span><span class="dv">${G.entry.cat}</span></div>
     <div class="dr"><span class="dk">Players' word</span><span class="dv">${G.entry.w[0]}</span></div>`;
   if (G.mode === 'imposter') {
-    rows += `<div class="dr"><span class="dk">Imposter was</span><span class="dv">${imp.name}</span></div>`;
+    rows += `<div class="dr"><span class="dk">${imps.length > 1 ? 'Imposters were' : 'Imposter was'}</span><span class="dv">${imps.map(p => p.name).join(', ')}</span></div>`;
   } else {
     rows += `<div class="dr"><span class="dk">Cuckoo word</span><span class="dv">${G.entry.w[1]}</span></div>
       <div class="dr"><span class="dk">Cuckoos were</span><span class="dv">${cks.map(p => p.name).join(', ')}</span></div>`;
