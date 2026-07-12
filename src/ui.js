@@ -25,7 +25,21 @@ export function selectMode(m) {
   buildSetup();
   show('setup-screen');
 }
-export function restartSame() { buildSetup(); show('setup-screen'); }
+// Re-picks a word from the same active category pool and reshuffles roles,
+// skipping Setup entirely — players go straight back to Peek for the new round.
+export function playAgain() {
+  const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
+  const entry = pool[rnd(pool.length)];
+  const count = mode === 'imposter' ? G.impCount : G.numCk;
+  G = buildGameData(mode, players, entry, count);
+  peekIdx = 0;
+  peekUnlocked = false;
+  document.getElementById('peek-mode-lbl').textContent = mode === 'imposter' ? 'STANDARD' : 'CUCKOO';
+  document.getElementById('peek-mode-lbl').className = 'gml ' + mode;
+  renderPeekProgress();
+  renderPeekCard();
+  show('peek-screen');
+}
 
 // ==================== PLAYERS ====================
 export function initPlayers() { players = ['Player 3', 'Player 2', 'Player 1']; }
@@ -51,6 +65,17 @@ function renderPlayers() {
 // 1:3 imposter/cuckoo-to-player ratio cap — shared by both modes' count controls.
 function impCountCap(n) { return Math.max(1, Math.floor(n / 3)); }
 
+// Briefly flashes a "N players max" message next to a count input's Auto toggle.
+// Keyed by the error span's id so each mode's timer is tracked independently.
+const countErrTimers = {};
+function flashCountError(errId, cap) {
+  const el = document.getElementById(errId);
+  el.textContent = `${cap} players max`;
+  el.classList.add('show');
+  clearTimeout(countErrTimers[errId]);
+  countErrTimers[errId] = setTimeout(() => el.classList.remove('show'), 2000);
+}
+
 function renderImpCountBlock() {
   const block = document.getElementById('imp-count-block');
   if (mode !== 'imposter') {
@@ -66,9 +91,7 @@ function renderImpCountBlock() {
   input.max = cap;
   if (auto.checked) {
     input.value = cap;
-    input.disabled = true;
   } else {
-    input.disabled = false;
     let v = parseInt(input.value, 10);
     if (isNaN(v)) v = 1;
     input.value = Math.min(Math.max(1, v), cap);
@@ -80,8 +103,17 @@ export function onImpCountInput(value) {
   const cap = impCountCap(players.length);
   let v = parseInt(value, 10);
   if (isNaN(v)) v = 1;
+  if (v > cap) flashCountError('opt-imp-count-err', cap);
   document.getElementById('opt-imp-count').value = Math.min(Math.max(1, v), cap);
   refreshInfo();
+}
+export function onImpCountFocus(el) {
+  const auto = document.getElementById('opt-imp-auto');
+  if (auto.checked) {
+    auto.checked = false;
+    renderImpCountBlock();
+  }
+  el.select();
 }
 
 function renderCkCountBlock() {
@@ -99,9 +131,7 @@ function renderCkCountBlock() {
   input.max = cap;
   if (auto.checked) {
     input.value = cap;
-    input.disabled = true;
   } else {
-    input.disabled = false;
     let v = parseInt(input.value, 10);
     if (isNaN(v)) v = 1;
     input.value = Math.min(Math.max(1, v), cap);
@@ -113,8 +143,17 @@ export function onCkCountInput(value) {
   const cap = impCountCap(players.length);
   let v = parseInt(value, 10);
   if (isNaN(v)) v = 1;
+  if (v > cap) flashCountError('opt-ck-count-err', cap);
   document.getElementById('opt-ck-count').value = Math.min(Math.max(1, v), cap);
   refreshInfo();
+}
+export function onCkCountFocus(el) {
+  const auto = document.getElementById('opt-ck-auto');
+  if (auto.checked) {
+    auto.checked = false;
+    renderCkCountBlock();
+  }
+  el.select();
 }
 
 export function addPlayer() {
@@ -174,6 +213,12 @@ function renderCatFilter() {
 }
 
 // ==================== SETUP ====================
+// Options-panel toggles get destroyed and rebuilt from scratch on every buildSetup()
+// call (mode switch, End Game, Play Again). toggleState persists their checked value
+// across those rebuilds for the lifetime of the session — a page reload clears it,
+// since it's just an in-memory module var, which is the reset-on-leave behavior we want.
+const toggleState = {};
+
 function buildSetup() {
   const isI = mode === 'imposter';
   document.getElementById('setup-mode-lbl').textContent = isI ? 'STANDARD' : 'CUCKOO';
@@ -184,21 +229,40 @@ function buildSetup() {
   ol.innerHTML = '';
   if (isI) {
     addToggle(ol, 'opt-cat', 'Show Category to Imposter', 'e.g. "Food", "Animal" — vague, not the word', true);
-    document.getElementById('opt-imp-auto').checked = true;
   } else {
     addToggle(ol, 'opt-cat-ck', 'Show Category on Cards', "Show the word category on each player's card", true);
-    document.getElementById('opt-ck-auto').checked = true;
   }
   addToggle(ol, 'opt-live-stats', 'Show Live Remaining Counts', 'Off = panel shows the starting numbers all game. On = counts update live each cycle.', false);
+  addToggle(ol, 'opt-imp-know', 'Imposters know each other', 'Upon word reveal, imposters are also told who their teammates are (if more than 1 imposter)', false, !isI);
   renderPlayers();
 }
 
-function addToggle(parent, id, label, desc, checked) {
+function addToggle(parent, id, label, desc, defaultChecked, disabled) {
+  if (!(id in toggleState)) toggleState[id] = defaultChecked;
+  const checked = toggleState[id];
   const r = document.createElement('div');
-  r.className = 'toggle-row';
-  r.innerHTML = `<div><div class="tl">${label}</div><div class="td">${desc}</div></div>
-    <label class="toggle"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}><div class="ttrack"></div></label>`;
+  r.className = 'toggle-row' + (disabled ? ' disabled' : '');
+  const errHtml = disabled ? `<div class="toggle-err" id="${id}-err"></div>` : '';
+  const blockAttr = disabled ? ` onclick="return onToggleBlocked(event, '${id}')"` : '';
+  r.innerHTML = `<div><div class="tl">${label}</div><div class="td">${desc}</div>${errHtml}</div>
+    <label class="toggle"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''}${blockAttr} onchange="onToggleChange('${id}', this.checked)"><div class="ttrack"></div></label>`;
   parent.appendChild(r);
+}
+
+export function onToggleChange(id, checked) { toggleState[id] = checked; }
+
+// Prevents a disabled toggle from flipping and flashes a "why not" message beside it.
+const toggleErrTimers = {};
+export function onToggleBlocked(event, id) {
+  event.preventDefault();
+  const err = document.getElementById(id + '-err');
+  if (err) {
+    err.textContent = 'Unavailable in this gamemode';
+    err.classList.add('show');
+    clearTimeout(toggleErrTimers[id]);
+    toggleErrTimers[id] = setTimeout(() => err.classList.remove('show'), 2000);
+  }
+  return false;
 }
 
 // ==================== PEEK ====================
@@ -214,6 +278,7 @@ export function goToPeek() {
     showCatImp: document.getElementById('opt-cat') ? document.getElementById('opt-cat').checked : false,
     showCatCk: document.getElementById('opt-cat-ck') ? document.getElementById('opt-cat-ck').checked : true,
     liveStats: document.getElementById('opt-live-stats') ? document.getElementById('opt-live-stats').checked : false,
+    impKnow: document.getElementById('opt-imp-know') ? document.getElementById('opt-imp-know').checked : false,
   };
   const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
   const entry = pool[rnd(pool.length)];
@@ -257,6 +322,11 @@ function renderPeekCard() {
     if (mode === 'imposter') {
       if (p.isImposter) {
         wordHTML = `<div class="pk-badge imp">IMPOSTER</div>`;
+        if (opts.impKnow && G.impCount > 1) {
+          const teammates = G.players.filter(o => o.isImposter && o !== p).map(o => o.name);
+          wordHTML += `<div class="pk-imp-plus">+</div>
+            <div class="pk-imp-team">${teammates.map(nm => `<div>${nm}</div>`).join('')}</div>`;
+        }
         if (opts.showCatImp) wordHTML += `<div class="pk-cat">${G.entry.cat}</div>`;
         wordHTML += `<div style="font-size:.75rem;color:var(--muted);margin-top:4px">You have no word. Bluff carefully.</div>`;
       } else {
@@ -304,7 +374,8 @@ function renderGame() {
 function renderStatus() {
   const bar = document.getElementById('status-bar');
   const n = G.players.length;
-  const noteHTML = `<div class="stat-note">‹ ${opts.liveStats ? 'LIVE' : 'AT THE START'} ›</div>`;
+  const liveCls = opts.liveStats ? ' live' : '';
+  const noteHTML = `<div class="stat-note${liveCls}">${opts.liveStats ? 'LIVE' : 'AT THE START'}<span class="stat-note-arrow"></span></div>`;
   if (G.mode === 'imposter') {
     const startingPl = n - G.impCount;
     const activePl = G.players.filter(p => !p.isImposter && !p.eliminated).length;
@@ -312,13 +383,19 @@ function renderStatus() {
     const impAlive = G.players.filter(p => p.isImposter && !p.eliminated).length;
     const impVal = opts.liveStats ? `${impAlive}/${G.impCount}` : `${G.impCount}`;
     const impLbl = G.impCount > 1 ? 'Imposters' : 'Imposter';
-    bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-      ${noteHTML}
-      <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
+    bar.innerHTML = `<div class="status-left">
+        ${noteHTML}
+        <div class="stat-pair-box${liveCls}">
+          <div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
+          <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
+        </div>
+      </div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
-      <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-y">${G.cycle}</div><div class="stat-lbl">Cycle</div></div>`;
+      <div class="status-right">
+        <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
+        <div class="sdiv"></div>
+        <div class="stat"><div class="stat-val sv-y">${G.cycle}</div><div class="stat-lbl">Cycle</div></div>
+      </div>`;
   } else {
     const startingPl = n - G.numCk;
     const activePl = G.players.filter(p => !p.isCuckoo && !p.eliminated).length;
@@ -326,13 +403,19 @@ function renderStatus() {
     const startingCk = G.numCk;
     const activeCk = G.players.filter(p => p.isCuckoo && !p.eliminated).length;
     const ckVal = opts.liveStats ? `${activeCk}/${startingCk}` : `${startingCk}`;
-    bar.innerHTML = `<div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-      ${noteHTML}
-      <div class="stat"><div class="stat-val sv-t">${ckVal}</div><div class="stat-lbl">Cuckoos</div></div>
+    bar.innerHTML = `<div class="status-left">
+        ${noteHTML}
+        <div class="stat-pair-box${liveCls}">
+          <div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
+          <div class="stat"><div class="stat-val sv-t">${ckVal}</div><div class="stat-lbl">Cuckoos</div></div>
+        </div>
+      </div>
       <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
-      <div class="sdiv"></div>
-      <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>`;
+      <div class="status-right">
+        <div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>
+        <div class="sdiv"></div>
+        <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>
+      </div>`;
   }
 }
 
@@ -449,6 +532,7 @@ function triggerFinalReveal(result) {
 export function showGameOver() {
   const result = G._endResult;
   show('go-screen');
+  document.getElementById('go-play-again-btn').className = 'btn-p' + (G.mode === 'cuckoo' ? ' teal' : '');
   const icons = { players_win: '🏆', imposter_wins: '🕵️', imposter_guessed: '🎯', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝' };
   const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE' };
   const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', imposter_guessed: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)' };

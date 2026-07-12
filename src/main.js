@@ -17,11 +17,15 @@ Object.assign(window, {
   skipVote: ui.skipVote,
   confirmElimination: ui.confirmElimination,
   showGameOver: ui.showGameOver,
-  restartSame: ui.restartSame,
+  playAgain: ui.playAgain,
   onImpAutoToggle: ui.onImpAutoToggle,
   onImpCountInput: ui.onImpCountInput,
+  onImpCountFocus: ui.onImpCountFocus,
   onCkAutoToggle: ui.onCkAutoToggle,
   onCkCountInput: ui.onCkCountInput,
+  onCkCountFocus: ui.onCkCountFocus,
+  onToggleBlocked: ui.onToggleBlocked,
+  onToggleChange: ui.onToggleChange,
   imposterGuessedWord: ui.imposterGuessedWord,
 });
 

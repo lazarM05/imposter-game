@@ -41,22 +41,24 @@
     <div class="imp-count-block" id="imp-count-block" style="display:none">
       <div class="imp-count-lbl">Imposter Count</div>
       <div class="imp-count-row">
-        <input type="number" class="imp-count-input" id="opt-imp-count" min="1" value="1" oninput="onImpCountInput(this.value)">
+        <input type="number" class="imp-count-input" id="opt-imp-count" min="1" value="1" oninput="onImpCountInput(this.value)" onfocus="onImpCountFocus(this)">
         <label class="imp-auto-toggle">
           <input type="checkbox" id="opt-imp-auto" checked onchange="onImpAutoToggle()">
           <span>Auto</span>
         </label>
+        <span class="count-err" id="opt-imp-count-err"></span>
       </div>
       <div class="td">Auto Imposter Count — 1:3 imposter to player ratio</div>
     </div>
     <div class="imp-count-block" id="ck-count-block" style="display:none">
       <div class="imp-count-lbl">Cuckoo Count</div>
       <div class="imp-count-row">
-        <input type="number" class="imp-count-input" id="opt-ck-count" min="1" value="1" oninput="onCkCountInput(this.value)">
+        <input type="number" class="imp-count-input" id="opt-ck-count" min="1" value="1" oninput="onCkCountInput(this.value)" onfocus="onCkCountFocus(this)">
         <label class="imp-auto-toggle">
           <input type="checkbox" id="opt-ck-auto" checked onchange="onCkAutoToggle()">
           <span>Auto</span>
         </label>
+        <span class="count-err" id="opt-ck-count-err"></span>
       </div>
       <div class="td">Auto Cuckoo Count — 1:3 cuckoo to player ratio</div>
     </div>
@@ -92,7 +94,7 @@
 <div class="screen" id="game-screen">
   <div class="topbar" style="width:100%">
     <div class="gml" id="game-mode-lbl">IMPOSTER</div>
-    <button class="btn-sm" onclick="goHome()">✕ End Game</button>
+    <button class="btn-sm" onclick="goSetup()">✕ End Game</button>
   </div>
   <div class="status-bar" id="status-bar"></div>
   <div class="cycle-bar" id="cycle-bar" style="display:none">
@@ -125,8 +127,9 @@
   <div class="go-sub" id="go-sub"></div>
   <div class="go-det" id="go-det"></div>
   <div class="go-det" id="go-player-reveal" style="margin-top:0"></div>
-  <button class="btn-p" onclick="goHome()" style="margin-top:8px">🏠 Main Menu</button>
-  <button class="btn-o" onclick="restartSame()">↺ Play Again</button>
+  <button class="btn-p" id="go-play-again-btn" onclick="playAgain()" style="margin-top:8px">↺ Play Again</button>
+  <button class="btn-o" onclick="goSetup()">🔧 Setup</button>
+  <button class="btn-o" onclick="goHome()">🏠 Main Menu</button>
 </div>
 
 <script type="module" src="/src/main.js"></script>
