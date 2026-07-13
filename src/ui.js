@@ -21,6 +21,7 @@ export function goHome() { show('home-screen'); }
 export function goSetup() { buildSetup(); show('setup-screen'); }
 export function selectMode(m) {
   mode = m;
+  document.body.dataset.mode = m;
   if (!players.length) initPlayers();
   buildSetup();
   show('setup-screen');
@@ -35,7 +36,6 @@ export function playAgain() {
   peekIdx = 0;
   peekUnlocked = false;
   document.getElementById('peek-mode-lbl').textContent = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' }[mode];
-  document.getElementById('peek-mode-lbl').className = 'gml ' + mode;
   renderPeekProgress();
   renderPeekCard();
   show('peek-screen');
@@ -202,10 +202,9 @@ function refreshInfo() {
 function renderCatFilter() {
   const cf = document.getElementById('cat-filter');
   cf.innerHTML = '';
-  const isCk = mode === 'cuckoo';
   ALL_CATS.forEach(cat => {
     const chip = document.createElement('div');
-    chip.className = 'cat-chip' + (activeCats.has(cat) ? ' active' : '') + (isCk ? ' teal' : '');
+    chip.className = 'cat-chip' + (activeCats.has(cat) ? ' active' : '');
     chip.textContent = cat;
     chip.onclick = () => {
       if (activeCats.has(cat)) {
@@ -229,8 +228,6 @@ function buildSetup() {
   const isR = mode === 'reverse';
   const labelMap = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' };
   document.getElementById('setup-mode-lbl').textContent = labelMap[mode];
-  document.getElementById('setup-mode-lbl').className = 'gml ' + mode;
-  document.getElementById('start-btn').className = 'btn-p' + (isI ? '' : isR ? ' yellow' : ' teal');
   renderCatFilter();
   const ol = document.getElementById('options-list');
   ol.innerHTML = '';
@@ -304,7 +301,6 @@ export function goToPeek() {
   peekIdx = 0;
   peekUnlocked = false;
   document.getElementById('peek-mode-lbl').textContent = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' }[mode];
-  document.getElementById('peek-mode-lbl').className = 'gml ' + mode;
   renderPeekProgress();
   renderPeekCard();
   show('peek-screen');
@@ -391,7 +387,6 @@ export function peekNext() {
 // ==================== GAME RENDER ====================
 function renderGame() {
   document.getElementById('game-mode-lbl').textContent = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' }[G.mode];
-  document.getElementById('game-mode-lbl').className = 'gml ' + G.mode;
   renderStatus();
   renderCycleBar();
   renderCards();
@@ -414,7 +409,7 @@ function renderStatus() {
         ${noteHTML}
         <div class="stat-pair-box${liveCls}">
           <div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-          <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
+          <div class="stat"><div class="stat-val sv-mode">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
         </div>
       </div>
       <div class="sdiv"></div>
@@ -434,7 +429,7 @@ function renderStatus() {
         ${noteHTML}
         <div class="stat-pair-box${liveCls}">
           <div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-          <div class="stat"><div class="stat-val sv-r">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
+          <div class="stat"><div class="stat-val sv-mode">${impVal}</div><div class="stat-lbl">${impLbl}</div></div>
         </div>
       </div>
       <div class="sdiv"></div>
@@ -454,7 +449,7 @@ function renderStatus() {
         ${noteHTML}
         <div class="stat-pair-box${liveCls}">
           <div class="stat"><div class="stat-val sv-y">${plVal}</div><div class="stat-lbl">Players</div></div>
-          <div class="stat"><div class="stat-val sv-t">${ckVal}</div><div class="stat-lbl">Cuckoos</div></div>
+          <div class="stat"><div class="stat-val sv-mode">${ckVal}</div><div class="stat-lbl">Cuckoos</div></div>
         </div>
       </div>
       <div class="sdiv"></div>
@@ -478,18 +473,12 @@ function renderCycleBar() {
   }
 }
 
-// Selection highlight matches each mode's theme color instead of a fixed yellow.
-const MODE_COLOR = { imposter: 'var(--accent)', cuckoo: 'var(--teal)', reverse: 'var(--yellow)' };
-const MODE_COLOR_RGB = { imposter: '232,68,90', cuckoo: '45,212,191', reverse: '251,191,36' };
-
 function renderCards() {
   const grid = document.getElementById('cards-grid');
   grid.innerHTML = '';
   const isVoting = G.mode === 'reverse'
     ? (G.phase === 'play' && G.votesLeft > 0)
     : G.phase === 'play';
-  const color = MODE_COLOR[G.mode];
-  const colorRgb = MODE_COLOR_RGB[G.mode];
   G.players.forEach((p, i) => {
     const card = document.createElement('div');
     let cls = 'gp-card';
@@ -497,17 +486,12 @@ function renderCards() {
     else if (isVoting) cls += ' clickable';
     if (isVoting && !p.eliminated && selectedVoteIdx === i) cls += ' selected-vote';
     card.className = cls;
-    if (isVoting && !p.eliminated && selectedVoteIdx === i) {
-      card.style.borderColor = color;
-      card.style.boxShadow = `0 0 18px rgba(${colorRgb},.35)`;
-      card.style.background = `rgba(${colorRgb},.08)`;
-    }
     const init = p.name[0].toUpperCase();
     let content = '';
     if (p.eliminated) {
       content = `<div class="elim-x">❌</div><div class="gp-cover">OUT</div>`;
     } else if (isVoting) {
-      content = `<div class="gp-cover" style="background:${selectedVoteIdx === i ? `rgba(${colorRgb},.15)` : 'var(--border)'};border-radius:8px;padding:7px 8px;font-size:.75rem;color:${selectedVoteIdx === i ? color : 'var(--muted)'};letter-spacing:1px;display:flex;align-items:center;justify-content:center">
+      content = `<div class="gp-cover${selectedVoteIdx === i ? ' selected' : ''}">
         ${selectedVoteIdx === i ? '✓ SELECTED' : 'TAP TO VOTE'}
       </div>`;
     } else {
@@ -688,7 +672,6 @@ function triggerFinalReveal(result) {
 export function showGameOver() {
   const result = G._endResult;
   show('go-screen');
-  document.getElementById('go-play-again-btn').className = 'btn-p' + (G.mode === 'cuckoo' ? ' teal' : G.mode === 'reverse' ? ' yellow' : '');
   const icons = { players_win: '🏆', imposter_wins: '🕵️', imposter_guessed: '🎯', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝',
     players_win_vote: '🏆', players_win_guess: '🎯', imposter_win_cycle: '🕵️', imposter_win_guesses: '🕵️' };
   const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE',
