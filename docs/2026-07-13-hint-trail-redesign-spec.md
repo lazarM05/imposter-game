@@ -196,6 +196,48 @@ just passively running out the clock.
 
 ---
 
+## Screens & UI Layout
+
+No new screens are needed — this mode reuses the existing shell
+(`setup-screen`, `peek-screen`, `game-screen`, `go-screen`) with adjusted
+content, not new structure.
+
+**Setup screen**: reused as-is (mode-specific options only).
+
+**Peek screen — re-triggered every cycle**: instead of firing once before
+`game-screen` loads (as in Standard/Cuckoo), `peek-screen` is shown again
+at the start of every cycle to distribute that cycle's hints, then returns
+to `game-screen`. **Critical implementation constraint**: this re-entry
+must reuse the existing `G` game-state object and only refresh each
+player's per-cycle hint field — it must *not* call `buildGameData()` again
+(which would reshuffle roles) and must preserve `G.cycle`, elimination
+status, and remaining vote/guess budgets exactly as they were. Flagged
+specifically because routing back into a screen that was originally built
+for a one-time reveal is an easy place to accidentally reset state that
+should persist.
+
+**Game screen — action panel**: reuses the existing vote-panel
+(`index.html` `#vote-panel`), repurposed:
+
+- **Kept unchanged**: "CONFIRM ELIMINATION" button and the tap-a-card
+  vote-target selection on `cards-grid`.
+- **Dropped**: "👎 Skip" (its old job — advancing the cycle — is now the
+  standalone Next Cycle button's job, since voting no longer drives cycle
+  progression) and "🎯 Imposter Guessed The Word" (Standard-mode-specific,
+  not applicable here).
+- **Added**: a guess-word text box + "X/3 left" counter (team's shared
+  guess budget, see Word-Guess Mechanic), and a large, bottom-of-screen
+  "NEXT CYCLE" button that triggers the next peek-screen hint round.
+
+`cards-grid` no longer needs to gate on a `play` phase to become
+clickable — since voting is available any time rather than only during a
+specific per-cycle phase, cards can simply stay selectable for the whole
+game (until the vote budget is exhausted or the game ends). This is a
+simplification opportunity worth noting for the implementation plan: this
+mode may not need the phase state machine Standard/Cuckoo use at all.
+
+---
+
 ## Guessing Rules (Secret Word)
 
 Carried over unchanged from the original spec:
