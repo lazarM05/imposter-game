@@ -93,9 +93,14 @@
   </div>
   <div class="peek-wrap">
     <div class="peek-card" id="peek-card"></div>
-    <div class="pk-prog" id="pk-prog"></div>
-    <button class="pk-btn-unlock" id="pk-unlock-btn" onclick="unlockPeek()" style="display:none">🔓 I'm ready — show my word</button>
-    <button class="pk-btn-next" id="pk-next-btn" onclick="peekNext()" style="display:none">DONE → Pass to next player</button>
+    <!-- Grouped and pinned to the bottom so its position never shifts with
+         peek-card's height — a taller card (e.g. imposter's extra info) would
+         otherwise visibly push this lower, tipping off which role a player has. -->
+    <div class="peek-actions">
+      <div class="pk-prog" id="pk-prog"></div>
+      <button class="pk-btn-unlock" id="pk-unlock-btn" onclick="unlockPeek()" style="display:none">🔓 I'm ready — show my word</button>
+      <button class="pk-btn-next" id="pk-next-btn" onclick="peekNext()" style="display:none">DONE → Pass to next player</button>
+    </div>
   </div>
 </div>
 
@@ -118,7 +123,10 @@
     <div class="guess-section" id="guess-section" style="display:none">
       <div class="pp-title" id="guess-title">🎯 GUESS THE WORD</div>
       <div class="guess-row">
-        <input type="text" class="guess-input" id="guess-input" placeholder="Type the word..." onkeydown="if(event.key==='Enter')submitGuess()">
+        <div class="guess-input-wrap">
+          <input type="text" class="guess-input" id="guess-input" placeholder="Type the word..." onkeydown="if(event.key==='Enter')submitGuess()">
+          <div class="guess-err" id="guess-err"></div>
+        </div>
         <button class="guess-submit-btn" id="guess-submit-btn" onclick="submitGuess()">GUESS</button>
       </div>
       <div class="guess-count" id="guess-count"></div>

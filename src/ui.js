@@ -230,7 +230,7 @@ function buildSetup() {
   const labelMap = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' };
   document.getElementById('setup-mode-lbl').textContent = labelMap[mode];
   document.getElementById('setup-mode-lbl').className = 'gml ' + mode;
-  document.getElementById('start-btn').className = 'btn-p' + (isI ? '' : isR ? ' purple' : ' teal');
+  document.getElementById('start-btn').className = 'btn-p' + (isI ? '' : isR ? ' yellow' : ' teal');
   renderCatFilter();
   const ol = document.getElementById('options-list');
   ol.innerHTML = '';
@@ -240,9 +240,13 @@ function buildSetup() {
     addToggle(ol, 'opt-cat-ck', 'Show Category on Cards', "Show the word category on each player's card", true);
   }
   addToggle(ol, 'opt-live-stats', 'Show Live Remaining Counts', 'Off = panel shows the starting numbers all game. On = counts update live each cycle.', false);
-  addToggle(ol, 'opt-imp-know', 'Imposters know each other', isR
-    ? 'Upon hint reveal, imposters are also told who their teammates are (if more than 1), so they can coordinate their fake hints.'
-    : 'Upon word reveal, imposters are also told who their teammates are (if more than 1 imposter)', false, !isI && !isR);
+  if (isR) {
+    addToggle(ol, 'opt-imp-know-r', 'Imposters know each other',
+      'Upon hint reveal, imposters are also told who their teammates are (if more than 1), so they can coordinate their fake hints.', true);
+  } else {
+    addToggle(ol, 'opt-imp-know', 'Imposters know each other',
+      'Upon word reveal, imposters are also told who their teammates are (if more than 1 imposter)', false, !isI);
+  }
   renderPlayers();
 }
 
@@ -287,7 +291,9 @@ export function goToPeek() {
     showCatImp: document.getElementById('opt-cat') ? document.getElementById('opt-cat').checked : false,
     showCatCk: document.getElementById('opt-cat-ck') ? document.getElementById('opt-cat-ck').checked : true,
     liveStats: document.getElementById('opt-live-stats') ? document.getElementById('opt-live-stats').checked : false,
-    impKnow: document.getElementById('opt-imp-know') ? document.getElementById('opt-imp-know').checked : false,
+    impKnow: mode === 'reverse'
+      ? (document.getElementById('opt-imp-know-r') ? document.getElementById('opt-imp-know-r').checked : true)
+      : (document.getElementById('opt-imp-know') ? document.getElementById('opt-imp-know').checked : false),
   };
   const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
   const entry = pool[rnd(pool.length)];
@@ -472,12 +478,18 @@ function renderCycleBar() {
   }
 }
 
+// Selection highlight matches each mode's theme color instead of a fixed yellow.
+const MODE_COLOR = { imposter: 'var(--accent)', cuckoo: 'var(--teal)', reverse: 'var(--yellow)' };
+const MODE_COLOR_RGB = { imposter: '232,68,90', cuckoo: '45,212,191', reverse: '251,191,36' };
+
 function renderCards() {
   const grid = document.getElementById('cards-grid');
   grid.innerHTML = '';
   const isVoting = G.mode === 'reverse'
     ? (G.phase === 'play' && G.votesLeft > 0)
     : G.phase === 'play';
+  const color = MODE_COLOR[G.mode];
+  const colorRgb = MODE_COLOR_RGB[G.mode];
   G.players.forEach((p, i) => {
     const card = document.createElement('div');
     let cls = 'gp-card';
@@ -485,12 +497,17 @@ function renderCards() {
     else if (isVoting) cls += ' clickable';
     if (isVoting && !p.eliminated && selectedVoteIdx === i) cls += ' selected-vote';
     card.className = cls;
+    if (isVoting && !p.eliminated && selectedVoteIdx === i) {
+      card.style.borderColor = color;
+      card.style.boxShadow = `0 0 18px rgba(${colorRgb},.35)`;
+      card.style.background = `rgba(${colorRgb},.08)`;
+    }
     const init = p.name[0].toUpperCase();
     let content = '';
     if (p.eliminated) {
       content = `<div class="elim-x">❌</div><div class="gp-cover">OUT</div>`;
     } else if (isVoting) {
-      content = `<div class="gp-cover" style="background:${selectedVoteIdx === i ? 'rgba(251,191,36,.15)' : 'var(--border)'};border-radius:8px;padding:7px 8px;font-size:.75rem;color:${selectedVoteIdx === i ? 'var(--yellow)' : 'var(--muted)'};letter-spacing:1px;display:flex;align-items:center;justify-content:center">
+      content = `<div class="gp-cover" style="background:${selectedVoteIdx === i ? `rgba(${colorRgb},.15)` : 'var(--border)'};border-radius:8px;padding:7px 8px;font-size:.75rem;color:${selectedVoteIdx === i ? color : 'var(--muted)'};letter-spacing:1px;display:flex;align-items:center;justify-content:center">
         ${selectedVoteIdx === i ? '✓ SELECTED' : 'TAP TO VOTE'}
       </div>`;
     } else {
@@ -523,6 +540,7 @@ function renderPhaseUI() {
     if (G.mode === 'reverse') {
       document.getElementById('guess-section').style.display = 'block';
       document.getElementById('guess-input').value = '';
+      document.getElementById('guess-err').classList.remove('show');
       document.getElementById('guess-count').textContent = `${G.guessesLeft}/3 guesses left`;
       document.getElementById('vote-count').style.display = 'block';
       document.getElementById('vote-count').textContent = `${G.votesLeft} vote${G.votesLeft !== 1 ? 's' : ''} left`;
@@ -601,6 +619,7 @@ export function confirmElimination() {
 export function imposterGuessedWord() { triggerFinalReveal('imposter_guessed'); }
 
 // ==================== GUESS (reverse mode) ====================
+let guessErrTimer = null;
 export function submitGuess() {
   const input = document.getElementById('guess-input');
   const guess = input.value.trim().toLowerCase();
@@ -616,6 +635,11 @@ export function submitGuess() {
   }
   input.value = '';
   document.getElementById('guess-count').textContent = `${G.guessesLeft}/3 guesses left`;
+  const err = document.getElementById('guess-err');
+  err.textContent = `Wrong word, ${G.guessesLeft} guess${G.guessesLeft !== 1 ? 'es' : ''} remain`;
+  err.classList.add('show');
+  clearTimeout(guessErrTimer);
+  guessErrTimer = setTimeout(() => err.classList.remove('show'), 3000);
 }
 
 // ==================== REVEAL ====================
@@ -664,13 +688,13 @@ function triggerFinalReveal(result) {
 export function showGameOver() {
   const result = G._endResult;
   show('go-screen');
-  document.getElementById('go-play-again-btn').className = 'btn-p' + (G.mode === 'cuckoo' ? ' teal' : G.mode === 'reverse' ? ' purple' : '');
+  document.getElementById('go-play-again-btn').className = 'btn-p' + (G.mode === 'cuckoo' ? ' teal' : G.mode === 'reverse' ? ' yellow' : '');
   const icons = { players_win: '🏆', imposter_wins: '🕵️', imposter_guessed: '🎯', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝',
     players_win_vote: '🏆', players_win_guess: '🎯', imposter_win_cycle: '🕵️', imposter_win_guesses: '🕵️' };
   const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE',
     players_win_vote: 'PLAYERS WIN!', players_win_guess: 'PLAYERS WIN!', imposter_win_cycle: 'IMPOSTERS WIN!', imposter_win_guesses: 'IMPOSTERS WIN!' };
   const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', imposter_guessed: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)',
-    players_win_vote: 'var(--purple)', players_win_guess: 'var(--purple)', imposter_win_cycle: 'var(--accent)', imposter_win_guesses: 'var(--accent)' };
+    players_win_vote: 'var(--yellow)', players_win_guess: 'var(--yellow)', imposter_win_cycle: 'var(--accent)', imposter_win_guesses: 'var(--accent)' };
   document.getElementById('go-icon').textContent = icons[result] || '🎭';
   document.getElementById('go-title').textContent = titles[result] || 'GAME OVER';
   document.getElementById('go-title').style.color = colors[result] || 'var(--text)';
