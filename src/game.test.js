@@ -189,6 +189,23 @@ describe('buildGameData — reverse mode', () => {
     expect(G.phase).toBe('play');
     expect(G._endResult).toBeNull();
   });
+
+  it('hintPool is empty for a word with no authored hints (e.g. Lion)', () => {
+    const G = buildGameData('reverse', players5, entry);
+    expect(G.hintPool).toEqual([]);
+  });
+
+  it('hintPool is a shuffled copy of REVERSE_HINTS for an authored word, not the original array', () => {
+    const dogEntry = { cat: 'Animal', w: ['Dog', 'Wolf'] };
+    const G = buildGameData('reverse', players5, dogEntry);
+    expect(G.hintPool).toHaveLength(8);
+    const hints = G.hintPool.map(h => h.hint).sort();
+    expect(new Set(hints).size).toBe(8); // no duplicates
+    // Building a second game must not have been corrupted by the first's shuffle.
+    const G2 = buildGameData('reverse', players5, dogEntry);
+    expect(G2.hintPool).toHaveLength(8);
+    expect(new Set(G2.hintPool.map(h => h.hint)).size).toBe(8);
+  });
 });
 
 describe('checkEnd — cuckoo mode', () => {

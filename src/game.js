@@ -1,5 +1,6 @@
 // Pure game-state logic — no DOM access. Safe to unit test in isolation.
 import { shuffle } from './utils.js';
+import { REVERSE_HINTS } from './reverseHints.js';
 
 export function buildGameData(mode, players, entry, count) {
   const n = players.length;
@@ -30,11 +31,18 @@ export function buildGameData(mode, players, entry, count) {
     const impSet = new Set(idxs.slice(0, impCount));
     const nonImpIdxs = idxs.slice(impCount);
     const groupASet = new Set(nonImpIdxs.slice(0, Math.ceil(nonImpIdxs.length / 2)));
+    // Shuffled once per game; ui.js deals 2 entries per cycle (index-based,
+    // wrapping via modulo) so this works the same regardless of how many
+    // hints this word has authored — see docs/reverse-hint-content-guidelines.md.
+    // Empty array for words without authored hints yet (ui.js falls back
+    // to the Hint {cycle}{group} placeholder in that case).
+    const hintPool = shuffle([...(REVERSE_HINTS[entry.w[0]] || [])]);
     return {
       mode: 'reverse',
       entry,
       impCount,
       secretWord: entry.w[0],
+      hintPool,
       maxCycles: n,
       guessesLeft: 3,
       votesLeft: impCount,

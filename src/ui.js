@@ -414,6 +414,16 @@ function renderPeekProgress() {
   });
 }
 
+// Deals 2 pool entries per cycle (group A / group B), wrapping via modulo
+// once the pool is exhausted — see docs/reverse-hint-content-guidelines.md
+// "Group Rotation". Falls back to the old placeholder for words that
+// don't have authored hints yet (G.hintPool is empty in that case).
+function hintForCycle(group) {
+  if (!G.hintPool.length) return `Hint ${G.cycle}${group}`;
+  const idx = ((G.cycle - 1) * 2 + (group === 'A' ? 0 : 1)) % G.hintPool.length;
+  return G.hintPool[idx].hint;
+}
+
 function renderPeekCard() {
   const p = G.players[peekIdx];
   const isLast = peekIdx === G.players.length - 1;
@@ -452,7 +462,7 @@ function renderPeekCard() {
         }
         wordHTML += `<div style="font-size:.75rem;color:var(--muted);margin-top:4px">Invent a misleading hint toward this word.</div>`;
       } else {
-        wordHTML = `<div class="pk-word">Hint ${G.cycle}${p.hintGroup}</div>`;
+        wordHTML = `<div class="pk-word">${hintForCycle(p.hintGroup)}</div>`;
       }
     } else {
       wordHTML = `<div class="pk-word">${p.word}</div>`;
