@@ -116,11 +116,11 @@ is validated.
    impostor are both available at any point during this discussion (see
    Word-Guess Mechanic and Vote-Kick Mechanic below) — neither is tied to
    the cycle boundary.
-4. **Cycle Advances**: Once the team is done discussing (and not mid
-   guess/vote), they move on and a new cycle begins with fresh hints.
-   *(Working assumption — this is a manual "next cycle" action, same
-   general shape as the existing modes' round-advance flow, not
-   automatically triggered by a guess or vote. Flagging for confirmation.)*
+4. **Cycle Advances**: A persistent "Next Cycle" button (bottom of screen)
+   lets the team manually advance whenever they're done discussing.
+   Pressing it triggers hint distribution for the new cycle (back to step
+   1). Guessing and voting don't auto-advance the cycle — they're
+   independent actions available any time, confirmed above.
 
 ## Cycle Limit
 
@@ -225,12 +225,7 @@ Carried over unchanged from the original spec:
 
 ## Open Questions (Unresolved — should be settled before implementation)
 
-1. **Cycle-advancement trigger** — confirm the working assumption in Round
-   Structure above: cycles advance via a manual "next cycle" action once
-   the team is done discussing, independent of guessing/voting (which can
-   happen any time and don't themselves end a cycle).
-
-2. **UI/visual design** — screen layouts, widget placement, how hint
+1. **UI/visual design** — screen layouts, widget placement, how hint
    groups/voting/guessing are actually presented on screen — hasn't been
    discussed yet at all. Likely reuses the existing six-screen shell
    (home/setup/peek/game/reveal/game-over) per this project's established
