@@ -62,26 +62,37 @@ Unchanged from the original spec — roughly 1:3, one impostor per 3 players.
 ## Hint Variety Mechanic (replaces old per-player unique hint)
 
 Instead of every non-impostor getting their own unique hint each cycle
-(which was the source of the quadratic hint-content scaling problem), the
-**non-impostors are split into a small number of groups**, and everyone in
-a group gets the same real hint word. The number of groups ("variety") is
-smaller than the non-impostor count and is tied to the impostor count —
-this is what keeps the content list small regardless of table size.
+(which was the source of the quadratic hint-content scaling problem), **all
+players are split into 3 roughly-equal groups each cycle**:
+
+1. The impostor group (sized per the existing 1:3 Impostor Ratio table
+   above).
+2. A non-impostor group that gets real hint #1.
+3. A non-impostor group that gets real hint #2.
+
+So the non-impostors (everyone not in group 1) are divided as evenly as
+possible between the two remaining groups. **Real-hint variety is a flat
+2, always** — it does not grow with player count, since it's always "2 of
+the 3 groups," not a count derived from headcount. This is what keeps the
+hint-content list small regardless of table size: content only ever needs
+2 real hint texts per cycle, not one per non-impostor.
 
 Worked examples given during design:
-- **1 impostor** (small table): 2 distinct hints exist that cycle — 1 real,
-  1 fake (from the 1 impostor).
-- **3 impostors, 6 non-impostors** (9 players total): 2 distinct **real**
-  hints exist that cycle. The 6 non-impostors split into two groups of 3,
-  each group getting one of the 2 real hints. The 3 impostors then each
-  choose to either invent their own fake hint (and coordinate their
-  stories with each other) or repeat one of the 2 real hints to blend in.
+- **1 impostor, 2 non-impostors** (3 players total): 3 groups of ~1 each —
+  1 impostor, 1 player on real hint #1, 1 player on real hint #2.
+- **3 impostors, 6 non-impostors** (9 players total): 3 groups of 3 each —
+  3 impostors, 3 players on real hint #1, 3 players on real hint #2.
 
-This turns "hints per word" from `(n − impCount) × cycles` into
-`variety × cycles`, where `variety` is small and doesn't scale with table
-size the same way — a large reduction in required content. **The exact
-formula mapping impostor count (or player count) to `variety` is not yet
-pinned down** — see Open Questions.
+Impostors then each individually choose to either invent their own fake
+hint (coordinating their story with other impostors if there's more than
+one) or repeat one of the 2 real hints verbatim to blend in — see Core
+Setup above.
+
+This turns "hints per word" from the original spec's
+`(n − impCount) × cycles` into a flat `2 × cycles` — linear in cycle count
+only, not in player count, and with cycles capped at `n` (see Cycle Limit
+below) that bounds the total content needed per word regardless of table
+size.
 
 **Content authoring, for now**: hint content will be placeholder templates
 ("Hint 1", "Hint 2", "Hint 3", ...) rather than real curated hints. Writing
@@ -92,47 +103,55 @@ is validated.
 
 ## Round Structure (Cycles)
 
-1. **Start of Cycle**: Non-impostor players receive a new real hint word.
-   Impostors privately invent a new misleading hint.
-2. **Hint Sharing**: All players (impostors included) share their hint word
-   with the group.
+1. **Start of Cycle**: Each player privately views their hint for this
+   cycle (real hint #1, real hint #2, or "you're an impostor, the word is
+   X — invent a hint") — delivered via the same private, phone-passing
+   reveal format the other two modes already use to show each player their
+   word at game start, just repeated at the top of every cycle instead of
+   only once at the start of the game.
+2. **Hint Sharing**: All players share their hint word with the group out
+   loud.
 3. **Discussion**: Group discusses which hints feel "off" and who might be
-   an impostor.
-4. **Forced Word Guess**: The team must reach consensus and submit one
-   guess at the secret word before the cycle ends (see Word-Guess Mechanic
-   below) — this is mandatory, not optional.
+   an impostor. Guessing the secret word and voting out a suspected
+   impostor are both available at any point during this discussion (see
+   Word-Guess Mechanic and Vote-Kick Mechanic below) — neither is tied to
+   the cycle boundary.
+4. **Cycle Advances**: Once the team is done discussing (and not mid
+   guess/vote), they move on and a new cycle begins with fresh hints.
+   *(Working assumption — this is a manual "next cycle" action, same
+   general shape as the existing modes' round-advance flow, not
+   automatically triggered by a guess or vote. Flagging for confirmation.)*
 
 ## Cycle Limit
 
 - **Fixed at `cycles = total player count`** (including impostors).
 - This replaces the original spec's flat "3 cycles, configurable" default.
-- Chosen specifically to bound how much hint information can accumulate —
-  without a hard cap tied to player count, the team could stall
-  indefinitely (declining to commit to a guess) while collecting more and
-  more real hints, eventually making the word trivial and the impostors'
-  job effectively unwinnable.
-- **Rejected alternative**: forcing an impostor-vote (rather than a word
-  guess) every cycle. This doesn't actually bound hint accumulation, since
-  "no kick" is always a valid vote outcome, and the kick budget is already
-  capped separately (see below) — it would add friction without solving
-  the stalling problem.
+- Bounds both the total hint content needed per word (see Hint Variety
+  Mechanic above) and how long the game can run before impostors win by
+  default.
 
 ---
 
 ## Word-Guess Mechanic
 
-- At the end of every cycle, the whole team must come to agreement and
-  designate one person to submit **a single team-consensus guess** at the
-  secret word. This is forced, not optional — the team commits to a guess
-  every cycle regardless of confidence.
-- A wrong guess costs the team nothing beyond not winning that cycle —
-  there is **no separate guess-count budget** (this replaces the original
-  spec's shared "3 guesses total" pool).
+- The team shares a **pool of 3 guess attempts at the secret word, total,
+  for the whole game** (this brings back the original spec's "3 guesses"
+  budget, replacing the earlier forced-guess-every-cycle idea).
+- Guessing is available **any time**, not gated to a cycle boundary or any
+  particular step — same "whenever" timing as the vote-kick mechanic.
+  Making a guess doesn't pause or end the current cycle; discussion and
+  cycle-advancement continue normally around it.
+- A guess consumes one of the 3 attempts whether right or wrong. Exhausting
+  all 3 without success ends the game as an impostor win (see Win
+  Conditions below) — this is an immediate result, not something that
+  waits for the cycle limit to also be reached.
 - Because the guess is spoken aloud to the whole group, a wrong guess
   reveals the team's current theory to the impostors — who already know
   the real word — letting them steer future fake hints away from wherever
-  the team's guess just landed. This is an intentional, active counterplay
-  lever for impostors (see Win Conditions below for why this matters).
+  the team's guess just landed. This turns each of the 3 attempts into a
+  real resource-management decision: guess now on a hunch and risk both
+  burning an attempt and tipping off the impostors, or wait for a stronger
+  read.
 
 ---
 
@@ -163,18 +182,17 @@ is validated.
   the vote cap above (total votes = starting impostor count) means the
   team has zero margin for a wrong vote if they intend to win this way.
 
-**Impostor Win** — single condition:
-- Survive to the end of the fixed cycle count (i.e. the team neither
-  guessed the word nor used up their vote-kick budget successfully).
+**Impostor Win** — either path wins the game for the impostors:
+- (a) Survive to the end of the fixed cycle count without the team
+  guessing the word or fully voting out the impostors, or
+- (b) The team exhausts all 3 word-guess attempts without success. This
+  ends the game immediately, even before the cycle limit is reached.
 
-This is a deliberate asymmetry (1 impostor win condition vs. 2 player win
-conditions), discussed and considered acceptable rather than a balance gap:
-asymmetric win-condition counts are common in social deduction games (e.g.
-Mafia/Werewolf — the "evil" side often has a single, simpler win
-condition). It's a reasonable trade here specifically because impostors now
-hold more information than before (they know the real word), and the
-forced-guess mechanic above gives them an active, skill-driven way to
-defend that advantage rather than just passively running out the clock.
+This resolves an earlier asymmetry concern (impostors previously had only
+1 win condition against the players' 2) — with the capped guess budget,
+both sides now have exactly 2 win paths each, and impostor win (b) is
+directly caused by the impostors successfully misleading the team, not
+just passively running out the clock.
 
 ---
 
@@ -198,29 +216,26 @@ Carried over unchanged from the original spec:
   polluted one. E.g. at 9 players with the default 1:3 ratio, 3 of the 9
   hints given per cycle are misleading. This is a self-balancing property
   of the design, not a separate rule.
-- **Wrong guesses are a double-edged tool.** Since guesses are free
-  (no budget) but public (leak the team's theory), the tension isn't "can
-  we afford to guess" but "does guessing now help the impostors more than
-  it helps us."
+- **Wrong guesses are a double-edged tool.** Since guesses are scarce (3
+  total) *and* public (leak the team's theory), each one is a real
+  decision: is it worth spending an attempt now, on this hunch, knowing
+  it'll also tip off the impostors if wrong?
 
 ---
 
 ## Open Questions (Unresolved — should be settled before implementation)
 
-1. **Exact hint-variety formula.** Two data points exist (1 impostor → 1
-   real hint group; 3 impostors / 9 players → 2 real hint groups) but no
-   general formula mapping impostor count (or player count) to number of
-   real-hint groups has been pinned down yet. Needed before the variety
-   mechanic can actually be implemented.
+1. **Cycle-advancement trigger** — confirm the working assumption in Round
+   Structure above: cycles advance via a manual "next cycle" action once
+   the team is done discussing, independent of guessing/voting (which can
+   happen any time and don't themselves end a cycle).
 
-2. **Is there a "pass" option for the forced guess**, or are teams expected
-   to guess blind in early cycles (e.g. cycle 1, with almost no hints yet)?
-   Currently leaning toward no cost for wrong guesses, so blind guessing
-   may just be accepted as part of the intended tension — not decided.
-
-3. **UI/visual design** — screen layouts, widget placement, how hint
+2. **UI/visual design** — screen layouts, widget placement, how hint
    groups/voting/guessing are actually presented on screen — hasn't been
    discussed yet at all. Likely reuses the existing six-screen shell
    (home/setup/peek/game/reveal/game-over) per this project's established
    architecture, but the mode-specific content within those screens (hint
-   display, team-guess input, vote trigger) still needs to be designed.
+   display, team-guess input, vote trigger) still needs to be designed. The
+   repeated-per-cycle hint reveal (vs. the other modes' one-time peek) is a
+   structural difference from the existing Peek screen worth designing
+   carefully.
