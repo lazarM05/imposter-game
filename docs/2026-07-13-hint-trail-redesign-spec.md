@@ -1,4 +1,4 @@
-# Hint Trail Redesign — Design Spec
+# Imposter/Cuckoo — "Reverse" Game Mode (Hint Trail Redesign)
 ### Design Document
 
 Supersedes `docs/Imposter-Cuckoo_HintTrail_GameMode.md` (see that file's own
@@ -6,8 +6,14 @@ header for the supersession note) and folds in
 `docs/2026-07-12-hint-trail-redesign-notes.md`, the running session notes
 this spec was compiled from. This is the current source of truth for the
 mode's design, but it is **not fully locked** — see Open Questions at the
-end. A mode name has not been chosen yet; "Hint Trail" is used throughout
-as a working title only.
+end.
+
+**Display name: "Reverse"** — chosen because everyone's usual role is
+flipped (impostors know the word instead of not knowing it; the team's
+job is to find the word instead of finding the impostor first). Following
+this project's existing convention (see `CLAUDE.md`'s note on "Standard"
+mode), the display name and the internal mode key don't have to match —
+the internal key is a later implementation decision, not fixed here.
 
 ---
 
@@ -28,13 +34,16 @@ separate fake word and didn't know the real one either.
 - **Impostors know the secret word.** This is the central mechanic change
   from the original spec — impostors are no longer kept in the dark with a
   fake word; they know exactly what the team is trying to guess.
-- **Non-impostor players** receive one real hint word per cycle, related to
-  the secret word (carried over from the original spec's hint mechanic —
-  see Open Questions, this hasn't been explicitly re-confirmed this
-  session).
-- **Impostor Task**: Each cycle, every impostor privately invents their own
-  misleading hint word designed to steer the group away from the secret
-  word, then shares it alongside the real hints as if it were genuine.
+- **Non-impostor players are split into hint-variety groups each cycle**
+  (see Hint Variety Mechanic below) rather than each getting a unique hint
+  — this replaces the original spec's "one unique hint per non-impostor"
+  mechanic and is the fix for the hint-content scaling problem.
+- **Impostor Task**: Each cycle, every impostor either (a) invents their
+  own misleading hint and shares it as if genuine, matching their story
+  with other impostors if there's more than one, or (b) repeats one of the
+  real hints verbatim to blend in — trading away their chance to actively
+  steer the group away from the word in exchange for not standing out.
+  This is a live table-talk choice, not something the app assigns.
 
 ---
 
@@ -47,6 +56,37 @@ Unchanged from the original spec — roughly 1:3, one impostor per 3 players.
 | 5 | 1 |
 | 6 | 2 |
 | 9 | 3 |
+
+---
+
+## Hint Variety Mechanic (replaces old per-player unique hint)
+
+Instead of every non-impostor getting their own unique hint each cycle
+(which was the source of the quadratic hint-content scaling problem), the
+**non-impostors are split into a small number of groups**, and everyone in
+a group gets the same real hint word. The number of groups ("variety") is
+smaller than the non-impostor count and is tied to the impostor count —
+this is what keeps the content list small regardless of table size.
+
+Worked examples given during design:
+- **1 impostor** (small table): 2 distinct hints exist that cycle — 1 real,
+  1 fake (from the 1 impostor).
+- **3 impostors, 6 non-impostors** (9 players total): 2 distinct **real**
+  hints exist that cycle. The 6 non-impostors split into two groups of 3,
+  each group getting one of the 2 real hints. The 3 impostors then each
+  choose to either invent their own fake hint (and coordinate their
+  stories with each other) or repeat one of the 2 real hints to blend in.
+
+This turns "hints per word" from `(n − impCount) × cycles` into
+`variety × cycles`, where `variety` is small and doesn't scale with table
+size the same way — a large reduction in required content. **The exact
+formula mapping impostor count (or player count) to `variety` is not yet
+pinned down** — see Open Questions.
+
+**Content authoring, for now**: hint content will be placeholder templates
+("Hint 1", "Hint 2", "Hint 3", ...) rather than real curated hints. Writing
+real hint content per word is deferred to later, once the mechanic itself
+is validated.
 
 ---
 
@@ -98,13 +138,19 @@ Unchanged from the original spec — roughly 1:3, one impostor per 3 players.
 
 ## Vote-Kick Mechanic
 
-Carried over unchanged from the original spec:
-
 - **Total impostor-vote-out attempts across the whole game = number of
   impostors present at game start.** E.g. 1 impostor at game start → the
   team gets exactly 1 vote-out attempt, total, for the entire game.
-- This prevents brute-forcing impostors out via mass voting, same as
-  before.
+  Carried over unchanged from the original spec — this prevents
+  brute-forcing impostors out via mass voting.
+- **Voting is always optional and is not tied to cycle boundaries at
+  all** — it doesn't gate or end a cycle, and isn't a forced per-cycle
+  event the way the word guess is. It's available to call at any point as
+  an alternative route to winning, similar to how Among Us handles
+  emergency-meeting ejections against crew tasks: the main objective
+  (solving the word) keeps running in parallel, and voting is a
+  trump-card option the team can reach for whenever they want, independent
+  of the forced-guess cadence.
 
 ---
 
@@ -112,7 +158,10 @@ Carried over unchanged from the original spec:
 
 **Player Win** — either path wins the game for the team:
 - (a) Correctly guess the exact secret word, or
-- (b) Correctly vote out the impostor(s).
+- (b) Correctly vote out **all** impostors present at game start. Partial
+  elimination doesn't win it — every impostor must be caught, which given
+  the vote cap above (total votes = starting impostor count) means the
+  team has zero margin for a wrong vote if they intend to win this way.
 
 **Impostor Win** — single condition:
 - Survive to the end of the fixed cycle count (i.e. the team neither
@@ -158,40 +207,20 @@ Carried over unchanged from the original spec:
 
 ## Open Questions (Unresolved — should be settled before implementation)
 
-1. **New mode name** — not yet chosen. Affects internal key naming,
-   UI copy, and this doc's eventual filename.
+1. **Exact hint-variety formula.** Two data points exist (1 impostor → 1
+   real hint group; 3 impostors / 9 players → 2 real hint groups) but no
+   general formula mapping impostor count (or player count) to number of
+   real-hint groups has been pinned down yet. Needed before the variety
+   mechanic can actually be implemented.
 
-2. **Hint-content scaling problem (biggest open issue).** One unique,
-   non-duplicate real hint is needed per non-impostor player per cycle, and
-   cycles now scale with player count (`cycles = n`). Total unique hints
-   needed per secret word ≈ `(n − impCount) × n`, which grows roughly
-   quadratically:
-   - 9 players (3 imp / 6 real) → ~54 hints for one word
-   - 12 players → ~96 hints
-   - 15 players → ~150 hints
-   Candidate directions raised, none decided:
-   - Decouple max cycle count from strict `n` scaling so the hint list per
-     word stays bounded regardless of table size.
-   - Relax "no duplicate hint" from per-game scope to per-cycle scope, so
-     only one cycle's fan-out needs unique hints, not the whole game.
-   - Accept a lower player-count ceiling for this mode specifically (it
-     doesn't have to match Standard/Cuckoo's supported range).
-
-3. **Does the "one real hint per non-impostor per cycle" mechanic carry
-   over unchanged** from the original spec, or does anything about it
-   change under the new design? Assumed unchanged so far but never
-   explicitly re-confirmed.
-
-4. **Does the vote-out win path require catching *all* impostors**, given
-   the vote cap exactly equals the starting impostor count (zero margin for
-   a wrong vote if so)? The original spec's win condition was "vote out all
-   impostors before the cycle limit" — needs re-confirming under the new
-   cap.
-
-5. **Do the vote-out check and the forced word-guess both happen in the
-   same cycle** (two decision points per cycle), and if so, in what order?
-
-6. **Is there a "pass" option for the forced guess**, or are teams expected
+2. **Is there a "pass" option for the forced guess**, or are teams expected
    to guess blind in early cycles (e.g. cycle 1, with almost no hints yet)?
    Currently leaning toward no cost for wrong guesses, so blind guessing
    may just be accepted as part of the intended tension — not decided.
+
+3. **UI/visual design** — screen layouts, widget placement, how hint
+   groups/voting/guessing are actually presented on screen — hasn't been
+   discussed yet at all. Likely reuses the existing six-screen shell
+   (home/setup/peek/game/reveal/game-over) per this project's established
+   architecture, but the mode-specific content within those screens (hint
+   display, team-guess input, vote trigger) still needs to be designed.
