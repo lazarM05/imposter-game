@@ -5,8 +5,8 @@ Supersedes `docs/Imposter-Cuckoo_HintTrail_GameMode.md` (see that file's own
 header for the supersession note) and folds in
 `docs/2026-07-12-hint-trail-redesign-notes.md`, the running session notes
 this spec was compiled from. This is the current source of truth for the
-mode's design, but it is **not fully locked** — see Open Questions at the
-end.
+mode's design and is **fully locked** as of 2026-07-13 — ready for an
+implementation plan.
 
 **Display name: "Reverse"** — chosen because everyone's usual role is
 flipped (impostors know the word instead of not knowing it; the team's
@@ -269,21 +269,20 @@ Carried over unchanged from the original spec:
 
 ---
 
-## Open Questions (Unresolved — should be settled before implementation)
+## Remaining Minor Details
 
-The core game-screen action panel and peek re-entry are now designed (see
-Screens & UI Layout above). Remaining smaller UI details, not yet
-discussed:
+All rules and UI are now locked. Two trivial items are left to
+implementation-time judgment rather than spec'd in detail:
 
-1. **Peek-card content/wording** for the repeated per-cycle reveal —
-   exact phrasing for the three cases (real hint #1, real hint #2, "you're
-   an impostor, the word is X"), and whether the peek card should show
-   which cycle number this is.
-2. **Status bar / cycle bar** at the top of `game-screen` — Standard/Cuckoo
-   show live Players/Imposters counts, category, and cycle progress there.
-   Does Reverse mode's status bar need different stats (e.g. guesses left,
-   votes left), or do those live solely in the action panel below?
-3. **Reveal/game-over messaging** for the now four distinct end states
-   (word guessed, all impostors voted out, cycle limit reached, guess
-   budget exhausted) — needs wording for each, similar to how Standard/
-   Cuckoo differentiate their win/loss messages today.
+- **Peek-card wording** for the three per-cycle cases (real hint #1, real
+  hint #2, impostor) — follow the existing peek-card conventions in
+  `renderPeekCard()` (`src/ui.js`), swap word-reveal for hint-reveal.
+- **Status bar** — keep the existing Players/Category/Cycle shape; guess
+  and vote counts live only in the action panel, not duplicated at the top.
+
+**End-state messaging**: kept intentionally simple — a small label below
+the existing win/lose message, one per end state:
+- `END 1 — Players guessed the word`
+- `END 2 — Players voted out all impostors`
+- `END 3 — Impostors survived to the cycle limit`
+- `END 4 — Players ran out of guesses`
