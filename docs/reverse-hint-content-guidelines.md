@@ -80,6 +80,14 @@ fine; hints are meant to be indirect, not exhaustive.
 
 ## Hint Style
 
+- Concrete nouns and intrinsic-trait phrases (e.g. "Four legs," "Fur,"
+  "Backrest"), not bare adjectives. An early revision tried vague
+  adjectives (Soft, Compact, Warm) to chase broadness, but that just
+  made hints feel like random words with no anchor — especially with
+  the word category hidden by default. Broadness (how many words a hint
+  could apply to) and concreteness (noun vs. adjective) are different
+  axes; stay broad by picking traits shared across many words, not by
+  making the hint itself abstract.
 - Primarily single words, matching the existing word-association
   convention. Short 2-3 word phrases are allowed when a single word
   can't carry the idea (most often needed for Purpose hints, e.g.
@@ -89,6 +97,35 @@ fine; hints are meant to be indirect, not exhaustive.
   supersedes the earlier, looser "not so on-the-nose it's basically the
   answer" guidance with a concrete, testable bar (roughly 4 hints to a
   confident guess, not 2).
+- **Never name a separate, companion object.** Describe the subject's
+  own parts, materials, or actions — not another concrete thing that
+  happens to sit near it or share its traits. "Dining table" for Chair
+  is the canonical bad example: a table is a *different* guessable
+  object, and it shares Chair's own broad traits (four legs, creaks),
+  so naming it just hands the hunters a second correct-feeling answer
+  instead of describing Chair itself.
+- **Cross-check every hint against the word bank itself.** A hint value
+  that happens to equal another word's `w[0]` (e.g. "Rice" as a hint for
+  Sushi, or "Forest" as a Location hint for Owl) is a companion-object
+  violation by definition — it names a real, separately-selectable
+  secret word. Run a lowercase string match of every hint against all
+  99 `w[0]` values before finalizing a batch; this bit us twice already.
+- **At most one strongly-distinctive trait per word.** Check every pair
+  of hints within a word's own list — no two hints should combine to
+  make the word an instant, confident guess. "Backrest" + "Four legs"
+  for Chair is the canonical bad pairing: each hint is fine broadness
+  alone, but together they scream one specific object. In practice this
+  showed up hardest with animal sounds ("Barking," "Mooing," "Roaring")
+  which are each *individually* an instant giveaway by themselves, not
+  even needing a second hint — a regression of the very first "Bark for
+  Dog" problem this whole revision started from. Fix: pick one intended
+  signature trait per word (often a visual body part — "Horns," "Long
+  ears," "Curved beak" — since visual traits guess less instantly than
+  species-specific sounds), and keep every other hint, including
+  Sensory, generic enough that it doesn't independently name the word.
+  This can't be verified exhaustively by hand for 99 words × 28 pairs
+  each — treat it as a design discipline applied during authoring, not
+  a guarantee, and expect playtesting to surface edge cases.
 
 ## Reuse Hints Across Different Words
 
