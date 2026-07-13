@@ -221,7 +221,7 @@ function flashLockedMsg(errId, msg) {
   lockErrTimers[errId] = setTimeout(() => el.classList.remove('show'), 2000);
 }
 export function showCatLockError() {
-  flashLockedMsg('cat-lock-ingame-err', 'Locked in the current game');
+  flashLockedMsg('cat-lock-ingame-err', 'Locked - enable in setup');
 }
 
 // "Hide Word Category" (#opt-hide-cat, Reverse mode only) forces category
