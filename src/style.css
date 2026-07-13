@@ -37,7 +37,7 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 /* SECTION CARD */
 .sc{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;width:100%}
 .st{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px;color:var(--muted);margin-bottom:14px}
-.st-row{display:flex;align-items:center;justify-content:space-between}
+.st-row{display:flex;align-items:center;gap:14px}
 .st-row .imp-auto-toggle{font-family:'Nunito',sans-serif;text-transform:none;letter-spacing:normal}
 
 /* PLAYER LIST */
@@ -83,6 +83,9 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 .cat-filter{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
 .cat-chip{padding:6px 14px;border-radius:99px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:border-color .2s,color .2s,background .2s;user-select:none}
 .cat-chip.active{border-color:var(--mode-color);color:var(--text);background:rgba(var(--mode-color-rgb),.15)}
+.cat-chip.locked{opacity:.5;cursor:not-allowed}
+.imp-auto-toggle.locked{opacity:.5;cursor:not-allowed}
+.imp-auto-toggle.locked input{cursor:not-allowed}
 
 /* INFO BOX */
 .info-box{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:12px 16px;font-size:.78rem;color:var(--muted);line-height:1.7;width:100%}
@@ -136,6 +139,8 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 .status-right{flex:1;display:flex;align-items:center;justify-content:flex-start;gap:18px;min-width:0}
 .stat{text-align:left}
 .stat-pair-box .stat{text-align:center}
+.stat.locked{opacity:.45;cursor:pointer;position:relative}
+.stat-lock-err{position:absolute;top:100%;left:0;white-space:nowrap;margin-top:4px;z-index:5}
 .stat-val{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;line-height:1}
 .sv-y{color:var(--yellow)}.sv-p{color:var(--purple)}.sv-mode{color:var(--mode-color)}
 .stat-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}

@@ -29,6 +29,7 @@ Object.assign(window, {
   onToggleBlocked: ui.onToggleBlocked,
   onToggleChange: ui.onToggleChange,
   onCatRandomToggle: ui.onCatRandomToggle,
+  showCatLockError: ui.showCatLockError,
   imposterGuessedWord: ui.imposterGuessedWord,
 });
 

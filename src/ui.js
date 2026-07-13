@@ -207,6 +207,32 @@ function isCatRandom() {
   return el ? el.checked : false;
 }
 
+// Shared 2s-flash error mechanism for "you can't do that right now" clicks —
+// same idiom as flashCountError()/toggleErrTimers, generalized so both the
+// Setup-screen category lock and the in-game locked-category stat can reuse
+// one implementation instead of three copies of the same timer logic.
+const lockErrTimers = {};
+function flashLockedMsg(errId, msg) {
+  const el = document.getElementById(errId);
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(lockErrTimers[errId]);
+  lockErrTimers[errId] = setTimeout(() => el.classList.remove('show'), 2000);
+}
+export function showCatLockError() {
+  flashLockedMsg('cat-lock-ingame-err', 'Locked in the current game');
+}
+
+// "Hide Word Category" (#opt-hide-cat, Reverse mode only) forces category
+// selection to Random and locks the Setup-screen category controls — reads
+// toggleState directly (seeded further down in buildSetup()'s Reverse
+// branch); treated as "on" before that seeding happens too, since the
+// toggle's own default is true and renderCatFilter() can run before it.
+function isHideCatOn() {
+  return mode === 'reverse' && toggleState['opt-hide-cat'] !== false;
+}
+
 // Category-first random pick: when Random is on, pick one category with
 // equal odds regardless of how many words it has, then a random word from
 // just that category — a different distribution than filtering the whole
@@ -225,11 +251,16 @@ function renderCatFilter() {
   const cf = document.getElementById('cat-filter');
   cf.innerHTML = '';
   const randomOn = isCatRandom();
+  const locked = isHideCatOn();
   ALL_CATS.forEach(cat => {
     const chip = document.createElement('div');
-    chip.className = 'cat-chip' + (!randomOn && activeCats.has(cat) ? ' active' : '');
+    chip.className = 'cat-chip' + (!randomOn && activeCats.has(cat) ? ' active' : '') + (locked ? ' locked' : '');
     chip.textContent = cat;
     chip.onclick = () => {
+      if (locked) {
+        flashLockedMsg('cat-lock-err', "Locked while ‘Hide Word Category’ is on");
+        return;
+      }
       if (randomOn) {
         // Same "tap opts out of auto, takes manual control" idiom as
         // onImpCountFocus() unchecking opt-imp-auto.
@@ -242,6 +273,7 @@ function renderCatFilter() {
     };
     cf.appendChild(chip);
   });
+  updateCatRandomLockUI(locked);
 }
 
 // Unchecking Random directly (not via a chip tap) restores all categories as
@@ -250,6 +282,27 @@ function renderCatFilter() {
 export function onCatRandomToggle(checked) {
   if (!checked) activeCats = new Set(ALL_CATS);
   renderCatFilter();
+}
+
+// Mirrors the disabled-toggle-row idiom (CLAUDE.md) for the static #opt-cat-random
+// checkbox, which isn't rendered through addToggle(): while "Hide Word Category"
+// is on, force it checked and intercept its own click (rather than using the
+// native disabled attribute) so tapping it still flashes a reason.
+function updateCatRandomLockUI(locked) {
+  const randomCb = document.getElementById('opt-cat-random');
+  if (!randomCb) return;
+  const label = randomCb.closest('label');
+  if (locked) {
+    randomCb.checked = true;
+    if (label) label.classList.add('locked');
+    randomCb.onclick = (e) => {
+      e.preventDefault();
+      flashLockedMsg('cat-lock-err', "Locked while ‘Hide Word Category’ is on");
+    };
+  } else {
+    if (label) label.classList.remove('locked');
+    randomCb.onclick = null;
+  }
 }
 
 // ==================== SETUP ====================
@@ -274,6 +327,8 @@ function buildSetup() {
   }
   addToggle(ol, 'opt-live-stats', 'Show Live Remaining Counts', 'Off = panel shows the starting numbers all game. On = counts update live each cycle.', false);
   if (isR) {
+    addToggle(ol, 'opt-hide-cat', 'Hide Word Category',
+      "Don't show the word's category in-game. Forces category selection to Random while on.", true);
     addToggle(ol, 'opt-imp-know-r', 'Imposters know each other',
       'Upon hint reveal, imposters are also told who their teammates are (if more than 1), so they can coordinate their fake hints.', true);
   } else {
@@ -295,7 +350,12 @@ function addToggle(parent, id, label, desc, defaultChecked, disabled) {
   parent.appendChild(r);
 }
 
-export function onToggleChange(id, checked) { toggleState[id] = checked; }
+export function onToggleChange(id, checked) {
+  toggleState[id] = checked;
+  // Re-applies the Random-force + lock/fade on category controls (see
+  // isHideCatOn()/updateCatRandomLockUI()) whenever this toggle flips.
+  if (id === 'opt-hide-cat') renderCatFilter();
+}
 
 // Prevents a disabled toggle from flipping and flashes a "why not" message beside it.
 const toggleErrTimers = {};
@@ -327,6 +387,9 @@ export function goToPeek() {
     impKnow: mode === 'reverse'
       ? (document.getElementById('opt-imp-know-r') ? document.getElementById('opt-imp-know-r').checked : true)
       : (document.getElementById('opt-imp-know') ? document.getElementById('opt-imp-know').checked : false),
+    hideCat: mode === 'reverse'
+      ? (document.getElementById('opt-hide-cat') ? document.getElementById('opt-hide-cat').checked : true)
+      : false,
   };
   const entry = pickEntry();
   const countInputId = mode === 'cuckoo' ? 'opt-ck-count' : 'opt-imp-count';
@@ -460,6 +523,12 @@ function renderStatus() {
     const impAlive = G.players.filter(p => p.isImposter && !p.eliminated).length;
     const impVal = opts.liveStats ? `${impAlive}/${G.impCount}` : `${G.impCount}`;
     const impLbl = G.impCount > 1 ? 'Imposters' : 'Imposter';
+    // Category is hidden by default in Reverse mode (see opts.hideCat /
+    // "Hide Word Category") — shown faded with no value, clickable to
+    // explain why, instead of just being omitted.
+    const catHTML = opts.hideCat
+      ? `<div class="stat locked" onclick="showCatLockError()"><div class="stat-val sv-p">—</div><div class="stat-lbl">Category</div><div class="stat-lock-err toggle-err" id="cat-lock-ingame-err"></div></div>`
+      : `<div class="stat"><div class="stat-val sv-p">${G.entry.cat}</div><div class="stat-lbl">Category</div></div>`;
     bar.innerHTML = `<div class="status-left">
         ${noteHTML}
         <div class="stat-pair-box${liveCls}">
@@ -469,6 +538,8 @@ function renderStatus() {
       </div>
       <div class="sdiv"></div>
       <div class="status-right">
+        ${catHTML}
+        <div class="sdiv"></div>
         <div class="stat"><div class="stat-val sv-y">${G.cycle}/${G.maxCycles}</div><div class="stat-lbl">Cycle</div></div>
       </div>`;
   } else {
