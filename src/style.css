@@ -37,6 +37,8 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 /* SECTION CARD */
 .sc{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius);padding:18px;width:100%}
 .st{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:2px;color:var(--muted);margin-bottom:14px}
+.st-row{display:flex;align-items:center;justify-content:space-between}
+.st-row .imp-auto-toggle{text-transform:none;letter-spacing:normal}
 
 /* PLAYER LIST */
 .player-list{display:flex;flex-direction:column;gap:8px}

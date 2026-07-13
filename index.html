@@ -73,7 +73,13 @@
     </div>
   </div>
   <div class="sc">
-    <div class="st">📦 Word Categories</div>
+    <div class="st st-row">
+      <span>📦 Word Categories</span>
+      <label class="imp-auto-toggle">
+        <input type="checkbox" id="opt-cat-random" onchange="onCatRandomToggle(this.checked)">
+        <span>Random</span>
+      </label>
+    </div>
     <div class="cat-filter" id="cat-filter"></div>
   </div>
   <div class="sc">

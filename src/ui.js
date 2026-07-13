@@ -29,8 +29,7 @@ export function selectMode(m) {
 // Re-picks a word from the same active category pool and reshuffles roles,
 // skipping Setup entirely — players go straight back to Peek for the new round.
 export function playAgain() {
-  const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
-  const entry = pool[rnd(pool.length)];
+  const entry = pickEntry();
   const count = mode === 'cuckoo' ? G.numCk : G.impCount;
   G = buildGameData(mode, players, entry, count);
   peekIdx = 0;
@@ -199,21 +198,58 @@ function refreshInfo() {
 }
 
 // ==================== CAT FILTER ====================
+// The "Random" checkbox (#opt-cat-random) is a static element in index.html,
+// never destroyed by buildSetup() — same persistence mechanism as the
+// Imposter/Cuckoo count Auto checkboxes (see CLAUDE.md). Its DOM checked
+// state is the single source of truth; no separate module-level flag needed.
+function isCatRandom() {
+  const el = document.getElementById('opt-cat-random');
+  return el ? el.checked : false;
+}
+
+// Category-first random pick: when Random is on, pick one category with
+// equal odds regardless of how many words it has, then a random word from
+// just that category — a different distribution than filtering the whole
+// pool first. Shared by goToPeek() and playAgain() so both re-roll the same way.
+function pickEntry() {
+  if (isCatRandom()) {
+    const cat = ALL_CATS[rnd(ALL_CATS.length)];
+    const pool = ALL_WORDS.filter(w => w.cat === cat);
+    return pool[rnd(pool.length)];
+  }
+  const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
+  return pool[rnd(pool.length)];
+}
+
 function renderCatFilter() {
   const cf = document.getElementById('cat-filter');
   cf.innerHTML = '';
+  const randomOn = isCatRandom();
   ALL_CATS.forEach(cat => {
     const chip = document.createElement('div');
-    chip.className = 'cat-chip' + (activeCats.has(cat) ? ' active' : '');
+    chip.className = 'cat-chip' + (!randomOn && activeCats.has(cat) ? ' active' : '');
     chip.textContent = cat;
     chip.onclick = () => {
-      if (activeCats.has(cat)) {
+      if (randomOn) {
+        // Same "tap opts out of auto, takes manual control" idiom as
+        // onImpCountFocus() unchecking opt-imp-auto.
+        document.getElementById('opt-cat-random').checked = false;
+        activeCats = new Set([cat]);
+      } else if (activeCats.has(cat)) {
         if (activeCats.size > 1) activeCats.delete(cat);
       } else activeCats.add(cat);
       renderCatFilter();
     };
     cf.appendChild(chip);
   });
+}
+
+// Unchecking Random directly (not via a chip tap) restores all categories as
+// active, since nothing else has picked a manual selection yet and the game
+// requires at least one active category.
+export function onCatRandomToggle(checked) {
+  if (!checked) activeCats = new Set(ALL_CATS);
+  renderCatFilter();
 }
 
 // ==================== SETUP ====================
@@ -292,8 +328,7 @@ export function goToPeek() {
       ? (document.getElementById('opt-imp-know-r') ? document.getElementById('opt-imp-know-r').checked : true)
       : (document.getElementById('opt-imp-know') ? document.getElementById('opt-imp-know').checked : false),
   };
-  const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
-  const entry = pool[rnd(pool.length)];
+  const entry = pickEntry();
   const countInputId = mode === 'cuckoo' ? 'opt-ck-count' : 'opt-imp-count';
   const countEl = document.getElementById(countInputId);
   const count = countEl ? (parseInt(countEl.value, 10) || 1) : undefined;
