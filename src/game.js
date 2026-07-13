@@ -24,6 +24,32 @@ export function buildGameData(mode, players, entry, count) {
     };
   }
 
+  if (mode === 'reverse') {
+    const impCount = count || Math.max(1, Math.floor(n / 3));
+    const idxs = shuffle([...Array(n).keys()]);
+    const impSet = new Set(idxs.slice(0, impCount));
+    const nonImpIdxs = idxs.slice(impCount);
+    const groupASet = new Set(nonImpIdxs.slice(0, Math.ceil(nonImpIdxs.length / 2)));
+    return {
+      mode: 'reverse',
+      entry,
+      impCount,
+      secretWord: entry.w[0],
+      maxCycles: n,
+      guessesLeft: 3,
+      votesLeft: impCount,
+      players: players.map((name, i) => ({
+        name,
+        isImposter: impSet.has(i),
+        eliminated: false,
+        hintGroup: impSet.has(i) ? null : (groupASet.has(i) ? 'A' : 'B'),
+      })),
+      cycle: 1,
+      phase: 'play',
+      _endResult: null,
+    };
+  }
+
   const ckCount = count || Math.max(1, Math.floor(n / 3));
   const idxs = shuffle([...Array(n).keys()]);
   const ckSet = new Set(idxs.slice(0, ckCount));
@@ -51,6 +77,10 @@ export function checkEnd(G) {
     if (impLeft === 0) return 'players_win';
     if (impLeft >= nonImpLeft) return 'imposter_wins';
     return 'continue';
+  }
+  if (G.mode === 'reverse') {
+    const impLeft = G.players.filter(p => p.isImposter && !p.eliminated).length;
+    return impLeft === 0 ? 'players_win_vote' : 'continue';
   }
   const ckLeft = G.players.filter(p => p.isCuckoo && !p.eliminated).length;
   const plLeft = G.players.filter(p => !p.isCuckoo && !p.eliminated).length;

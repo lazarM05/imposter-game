@@ -149,6 +149,48 @@ describe('checkEnd — imposter mode (multi-imposter)', () => {
   });
 });
 
+describe('buildGameData — reverse mode', () => {
+  it('follows the 1:3 imposter ratio table', () => {
+    const cases = [
+      { n: 5, expectedImp: 1 },
+      { n: 6, expectedImp: 2 },
+      { n: 9, expectedImp: 3 },
+      { n: 12, expectedImp: 4 },
+    ];
+    for (const { n, expectedImp } of cases) {
+      const players = Array.from({ length: n }, (_, i) => `P${i}`);
+      const G = buildGameData('reverse', players, entry);
+      expect(G.impCount).toBe(expectedImp);
+    }
+  });
+
+  it('splits non-impostors into two disjoint, roughly-equal hint groups', () => {
+    const G = buildGameData('reverse', players7, entry, 2); // 5 non-imposters
+    const impostors = G.players.filter(p => p.isImposter);
+    const groupA = G.players.filter(p => p.hintGroup === 'A');
+    const groupB = G.players.filter(p => p.hintGroup === 'B');
+    expect(impostors).toHaveLength(2);
+    for (const p of impostors) expect(p.hintGroup).toBeNull();
+    expect(groupA.length + groupB.length).toBe(5);
+    expect(Math.abs(groupA.length - groupB.length)).toBeLessThanOrEqual(1);
+  });
+
+  it('sets secretWord to w[0], maxCycles = n, guessesLeft = 3, votesLeft = impCount', () => {
+    const G = buildGameData('reverse', players7, entry, 2); // n=7
+    expect(G.secretWord).toBe('Lion');
+    expect(G.maxCycles).toBe(7);
+    expect(G.guessesLeft).toBe(3);
+    expect(G.votesLeft).toBe(2);
+  });
+
+  it('starts at cycle 1, phase play, no end result', () => {
+    const G = buildGameData('reverse', players5, entry);
+    expect(G.cycle).toBe(1);
+    expect(G.phase).toBe('play');
+    expect(G._endResult).toBeNull();
+  });
+});
+
 describe('checkEnd — cuckoo mode', () => {
   it('players_win when all cuckoos are eliminated', () => {
     const G = buildGameData('cuckoo', players5, entry); // 1 cuckoo at n=5
@@ -165,6 +207,20 @@ describe('checkEnd — cuckoo mode', () => {
 
   it('continue when neither end condition is met', () => {
     const G = buildGameData('cuckoo', players5, entry);
+    expect(checkEnd(G)).toBe('continue');
+  });
+});
+
+describe('checkEnd — reverse mode', () => {
+  it('players_win_vote when all impostors are eliminated', () => {
+    const G = buildGameData('reverse', players7, entry, 2);
+    G.players.filter(p => p.isImposter).forEach(p => (p.eliminated = true));
+    expect(checkEnd(G)).toBe('players_win_vote');
+  });
+
+  it('continue when at least one impostor remains', () => {
+    const G = buildGameData('reverse', players7, entry, 2);
+    G.players.filter(p => p.isImposter).slice(0, 1).forEach(p => (p.eliminated = true));
     expect(checkEnd(G)).toBe('continue');
   });
 });
