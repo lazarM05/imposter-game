@@ -220,13 +220,17 @@ should persist.
 (`index.html` `#vote-panel`), repurposed:
 
 - **Kept unchanged**: "CONFIRM ELIMINATION" button and the tap-a-card
-  vote-target selection on `cards-grid`.
+  vote-target selection on `cards-grid`. Adds a "X left" remaining-votes
+  counter next to it, mirroring the guess counter, so both scarce
+  resources are visible at a glance.
 - **Dropped**: "👎 Skip" (its old job — advancing the cycle — is now the
   standalone Next Cycle button's job, since voting no longer drives cycle
   progression) and "🎯 Imposter Guessed The Word" (Standard-mode-specific,
   not applicable here).
 - **Added**: a guess-word text box + "X/3 left" counter (team's shared
-  guess budget, see Word-Guess Mechanic), and a large, bottom-of-screen
+  guess budget, see Word-Guess Mechanic) with a single-tap submit — no
+  in-app confirmation step, since agreement is expected to happen verbally
+  between players before typing — and a large, bottom-of-screen
   "NEXT CYCLE" button that triggers the next peek-screen hint round.
 
 `cards-grid` no longer needs to gate on a `play` phase to become
@@ -267,12 +271,19 @@ Carried over unchanged from the original spec:
 
 ## Open Questions (Unresolved — should be settled before implementation)
 
-1. **UI/visual design** — screen layouts, widget placement, how hint
-   groups/voting/guessing are actually presented on screen — hasn't been
-   discussed yet at all. Likely reuses the existing six-screen shell
-   (home/setup/peek/game/reveal/game-over) per this project's established
-   architecture, but the mode-specific content within those screens (hint
-   display, team-guess input, vote trigger) still needs to be designed. The
-   repeated-per-cycle hint reveal (vs. the other modes' one-time peek) is a
-   structural difference from the existing Peek screen worth designing
-   carefully.
+The core game-screen action panel and peek re-entry are now designed (see
+Screens & UI Layout above). Remaining smaller UI details, not yet
+discussed:
+
+1. **Peek-card content/wording** for the repeated per-cycle reveal —
+   exact phrasing for the three cases (real hint #1, real hint #2, "you're
+   an impostor, the word is X"), and whether the peek card should show
+   which cycle number this is.
+2. **Status bar / cycle bar** at the top of `game-screen` — Standard/Cuckoo
+   show live Players/Imposters counts, category, and cycle progress there.
+   Does Reverse mode's status bar need different stats (e.g. guesses left,
+   votes left), or do those live solely in the action panel below?
+3. **Reveal/game-over messaging** for the now four distinct end states
+   (word guessed, all impostors voted out, cycle limit reached, guess
+   budget exhausted) — needs wording for each, similar to how Standard/
+   Cuckoo differentiate their win/loss messages today.
