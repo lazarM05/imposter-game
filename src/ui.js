@@ -30,11 +30,11 @@ export function selectMode(m) {
 export function playAgain() {
   const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
   const entry = pool[rnd(pool.length)];
-  const count = mode === 'imposter' ? G.impCount : G.numCk;
+  const count = mode === 'cuckoo' ? G.numCk : G.impCount;
   G = buildGameData(mode, players, entry, count);
   peekIdx = 0;
   peekUnlocked = false;
-  document.getElementById('peek-mode-lbl').textContent = mode === 'imposter' ? 'STANDARD' : 'CUCKOO';
+  document.getElementById('peek-mode-lbl').textContent = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' }[mode];
   document.getElementById('peek-mode-lbl').className = 'gml ' + mode;
   renderPeekProgress();
   renderPeekCard();
@@ -78,7 +78,7 @@ function flashCountError(errId, cap) {
 
 function renderImpCountBlock() {
   const block = document.getElementById('imp-count-block');
-  if (mode !== 'imposter') {
+  if (mode !== 'imposter' && mode !== 'reverse') {
     block.style.display = 'none';
     return;
   }
@@ -184,6 +184,11 @@ function refreshInfo() {
     const maxCycles = n - 2 * impCount;
     document.getElementById('setup-info').innerHTML =
       `<strong>How it works:</strong> ${impCount > 1 ? `${impCount} players are Imposters` : 'One player is the Imposter'} — they get no word, just the category (if enabled). Everyone gives associations each cycle. Each cycle, vote to eliminate someone or skip. Players win by eliminating all Imposters. Imposters win if their count equals or exceeds the remaining regular (non-Imposter) players, or if they correctly guess the word out loud. With ${n} players and ${impCount} imposter${impCount > 1 ? 's' : ''}: up to <strong>${maxCycles} cycle${maxCycles !== 1 ? 's' : ''}</strong>.`;
+  } else if (mode === 'reverse') {
+    const impCountEl = document.getElementById('opt-imp-count');
+    const impCount = impCountEl ? (parseInt(impCountEl.value, 10) || 1) : 1;
+    document.getElementById('setup-info').innerHTML =
+      `<strong>How it works:</strong> ${impCount > 1 ? `${impCount} players are Imposters` : 'One player is the Imposter'} and know the secret word — everyone else only gets a hint. Imposters invent misleading hints to steer the group away. The team shares <strong>3 word guesses</strong> and <strong>${impCount} vote-out attempt${impCount > 1 ? 's' : ''}</strong> for the whole game, usable any time. Players win by guessing the word or voting out all Imposters. Imposters win by surviving <strong>${n} cycles</strong> or making the team run out of guesses.`;
   } else {
     const ckCountEl = document.getElementById('opt-ck-count');
     const c = ckCountEl ? (parseInt(ckCountEl.value, 10) || 1) : Math.max(1, Math.floor(n / 3));
@@ -221,19 +226,23 @@ const toggleState = {};
 
 function buildSetup() {
   const isI = mode === 'imposter';
-  document.getElementById('setup-mode-lbl').textContent = isI ? 'STANDARD' : 'CUCKOO';
+  const isR = mode === 'reverse';
+  const labelMap = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' };
+  document.getElementById('setup-mode-lbl').textContent = labelMap[mode];
   document.getElementById('setup-mode-lbl').className = 'gml ' + mode;
-  document.getElementById('start-btn').className = 'btn-p' + (isI ? '' : ' teal');
+  document.getElementById('start-btn').className = 'btn-p' + (isI ? '' : isR ? ' purple' : ' teal');
   renderCatFilter();
   const ol = document.getElementById('options-list');
   ol.innerHTML = '';
   if (isI) {
     addToggle(ol, 'opt-cat', 'Show Category to Imposter', 'e.g. "Food", "Animal" — vague, not the word', true);
-  } else {
+  } else if (!isR) {
     addToggle(ol, 'opt-cat-ck', 'Show Category on Cards', "Show the word category on each player's card", true);
   }
   addToggle(ol, 'opt-live-stats', 'Show Live Remaining Counts', 'Off = panel shows the starting numbers all game. On = counts update live each cycle.', false);
-  addToggle(ol, 'opt-imp-know', 'Imposters know each other', 'Upon word reveal, imposters are also told who their teammates are (if more than 1 imposter)', false, !isI);
+  addToggle(ol, 'opt-imp-know', 'Imposters know each other', isR
+    ? 'Upon hint reveal, imposters are also told who their teammates are (if more than 1), so they can coordinate their fake hints.'
+    : 'Upon word reveal, imposters are also told who their teammates are (if more than 1 imposter)', false, !isI && !isR);
   renderPlayers();
 }
 
@@ -282,13 +291,13 @@ export function goToPeek() {
   };
   const pool = ALL_WORDS.filter(w => activeCats.has(w.cat));
   const entry = pool[rnd(pool.length)];
-  const countInputId = mode === 'imposter' ? 'opt-imp-count' : 'opt-ck-count';
+  const countInputId = mode === 'cuckoo' ? 'opt-ck-count' : 'opt-imp-count';
   const countEl = document.getElementById(countInputId);
   const count = countEl ? (parseInt(countEl.value, 10) || 1) : undefined;
   G = buildGameData(mode, players, entry, count);
   peekIdx = 0;
   peekUnlocked = false;
-  document.getElementById('peek-mode-lbl').textContent = mode === 'imposter' ? 'STANDARD' : 'CUCKOO';
+  document.getElementById('peek-mode-lbl').textContent = { imposter: 'STANDARD', cuckoo: 'CUCKOO', reverse: 'REVERSE' }[mode];
   document.getElementById('peek-mode-lbl').className = 'gml ' + mode;
   renderPeekProgress();
   renderPeekCard();

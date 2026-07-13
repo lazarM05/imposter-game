@@ -19,9 +19,10 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 .mode-card:hover{transform:translateY(-3px)}
 .mi{border-color:#3d1e26}.mi:hover{border-color:var(--accent);box-shadow:0 8px 28px rgba(232,68,90,.25)}
 .mc{border-color:#0e2e2c}.mc:hover{border-color:var(--teal);box-shadow:0 8px 28px rgba(45,212,191,.2)}
+.mr{border-color:#251d3d;grid-column:1/-1}.mr:hover{border-color:var(--purple);box-shadow:0 8px 28px rgba(167,139,250,.2)}
 .mode-icon{font-size:2.2rem;margin-bottom:10px}
 .mode-name{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:3px;margin-bottom:6px}
-.mi .mode-name{color:var(--accent)}.mc .mode-name{color:var(--teal)}
+.mi .mode-name{color:var(--accent)}.mc .mode-name{color:var(--teal)}.mr .mode-name{color:var(--purple)}
 .mode-desc{font-size:.75rem;color:var(--muted);line-height:1.5}
 
 /* SECTION CARD */
@@ -83,6 +84,8 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 .btn-p:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
 .btn-p.teal{background:var(--teal);box-shadow:0 6px 28px rgba(45,212,191,.35);color:#0a0a10}
 .btn-p.teal:hover:not(:disabled){box-shadow:0 10px 36px rgba(45,212,191,.45)}
+.btn-p.purple{background:var(--purple);box-shadow:0 6px 28px rgba(167,139,250,.35);color:#0a0a10}
+.btn-p.purple:hover:not(:disabled){box-shadow:0 10px 36px rgba(167,139,250,.45)}
 .btn-o{background:transparent;border:2px solid var(--border);border-radius:50px;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;cursor:pointer;padding:12px 32px;transition:border-color .2s,color .2s}
 .btn-o:hover{border-color:var(--text);color:var(--text)}
 .btn-sm{background:var(--card);border:1.5px solid var(--border);border-radius:10px;color:var(--muted);font-family:'Nunito',sans-serif;font-weight:700;font-size:.82rem;padding:7px 14px;cursor:pointer;transition:color .2s,border-color .2s}
@@ -118,7 +121,7 @@ body{background:var(--bg);min-height:100vh;font-family:'Nunito',sans-serif;color
 /* GAME */
 .topbar{width:100%;display:flex;align-items:center;justify-content:space-between}
 .gml{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:3px}
-.gml.imposter{color:var(--accent)}.gml.cuckoo{color:var(--teal)}
+.gml.imposter{color:var(--accent)}.gml.cuckoo{color:var(--teal)}.gml.reverse{color:var(--purple)}
 
 /* STATUS */
 .status-bar{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:12px 18px;width:100%;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
