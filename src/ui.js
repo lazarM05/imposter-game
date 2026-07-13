@@ -549,11 +549,11 @@ function renderPhaseUI() {
 // again (that would reshuffle roles) — only G.cycle changes here, everything
 // else (eliminations, guesses/votes left) carries over untouched.
 export function nextCycle() {
-  G.cycle++;
-  if (G.cycle > G.maxCycles) {
+  if (G.cycle >= G.maxCycles) {
     triggerFinalReveal('imposter_win_cycle');
     return;
   }
+  G.cycle++;
   peekIdx = 0;
   peekUnlocked = false;
   renderPeekProgress();
@@ -636,7 +636,25 @@ function triggerFinalReveal(result) {
   else if (result === 'imposter_guessed') sub = 'The Imposter correctly guessed the word! Tap "See Results" to see the truth.';
   else if (result === 'cuckoo_wins') sub = 'The cuckoos blended in long enough. Tap "See Results" to reveal who was who.';
   else if (result === 'tied') sub = 'The vote was tied — no one was eliminated. The game ends here. Tap "See Results" to reveal.';
+  else if (result === 'players_win_vote') sub = 'Every Imposter was voted out! Tap "See Results" to reveal everyone\'s roles.';
+  else if (result === 'players_win_guess') sub = 'The team guessed the secret word! Tap "See Results" to reveal everyone\'s roles.';
+  else if (result === 'imposter_win_cycle') sub = 'The Imposters survived to the cycle limit. Tap "See Results" to reveal everyone\'s roles.';
+  else if (result === 'imposter_win_guesses') sub = 'The team ran out of guesses. Tap "See Results" to reveal everyone\'s roles.';
   else sub = 'Tap "See Results" to reveal everyone\'s words.';
+
+  const endLabels = {
+    players_win_vote: 'END 2 — Players voted out all imposters',
+    players_win_guess: 'END 1 — Players guessed the word',
+    imposter_win_cycle: 'END 3 — Imposters survived to the cycle limit',
+    imposter_win_guesses: 'END 4 — Players ran out of guesses',
+  };
+  const endLabelEl = document.getElementById('reveal-end-label');
+  if (endLabels[result]) {
+    endLabelEl.textContent = endLabels[result];
+    endLabelEl.style.display = 'block';
+  } else {
+    endLabelEl.style.display = 'none';
+  }
 
   document.getElementById('reveal-title').textContent = title;
   document.getElementById('reveal-sub').textContent = sub;
@@ -646,20 +664,28 @@ function triggerFinalReveal(result) {
 export function showGameOver() {
   const result = G._endResult;
   show('go-screen');
-  document.getElementById('go-play-again-btn').className = 'btn-p' + (G.mode === 'cuckoo' ? ' teal' : '');
-  const icons = { players_win: '🏆', imposter_wins: '🕵️', imposter_guessed: '🎯', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝' };
-  const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE' };
-  const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', imposter_guessed: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)' };
+  document.getElementById('go-play-again-btn').className = 'btn-p' + (G.mode === 'cuckoo' ? ' teal' : G.mode === 'reverse' ? ' purple' : '');
+  const icons = { players_win: '🏆', imposter_wins: '🕵️', imposter_guessed: '🎯', cuckoo_wins: '🐦', no_result: '🎭', tied: '🤝',
+    players_win_vote: '🏆', players_win_guess: '🎯', imposter_win_cycle: '🕵️', imposter_win_guesses: '🕵️' };
+  const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE',
+    players_win_vote: 'PLAYERS WIN!', players_win_guess: 'PLAYERS WIN!', imposter_win_cycle: 'IMPOSTERS WIN!', imposter_win_guesses: 'IMPOSTERS WIN!' };
+  const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', imposter_guessed: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)',
+    players_win_vote: 'var(--purple)', players_win_guess: 'var(--purple)', imposter_win_cycle: 'var(--accent)', imposter_win_guesses: 'var(--accent)' };
   document.getElementById('go-icon').textContent = icons[result] || '🎭';
   document.getElementById('go-title').textContent = titles[result] || 'GAME OVER';
   document.getElementById('go-title').style.color = colors[result] || 'var(--text)';
   document.getElementById('go-sub').textContent = `After ${G.cycle} cycle${G.cycle !== 1 ? 's' : ''} with ${G.players.length} players.`;
-  const imps = G.mode === 'imposter' ? G.players.filter(p => p.isImposter) : [];
+  const imps = G.mode !== 'cuckoo' ? G.players.filter(p => p.isImposter) : [];
   const cks = G.mode === 'cuckoo' ? G.players.filter(p => p.isCuckoo) : [];
-  let rows = `<div class="dr"><span class="dk">Mode</span><span class="dv">${G.mode === 'imposter' ? 'Standard' : 'Cuckoo'}</span></div>
+  const modeLabel = { imposter: 'Standard', cuckoo: 'Cuckoo', reverse: 'Reverse' }[G.mode];
+  let rows = `<div class="dr"><span class="dk">Mode</span><span class="dv">${modeLabel}</span></div>
     <div class="dr"><span class="dk">Category</span><span class="dv">${G.entry.cat}</span></div>
-    <div class="dr"><span class="dk">Players' word</span><span class="dv">${G.entry.w[0]}</span></div>`;
-  if (G.mode === 'imposter') {
+    <div class="dr"><span class="dk">${G.mode === 'reverse' ? 'Secret word' : "Players' word"}</span><span class="dv">${G.mode === 'reverse' ? G.secretWord : G.entry.w[0]}</span></div>`;
+  if (G.mode === 'reverse') {
+    rows += `<div class="dr"><span class="dk">${imps.length > 1 ? 'Imposters were' : 'Imposter was'}</span><span class="dv">${imps.map(p => p.name).join(', ')}</span></div>
+      <div class="dr"><span class="dk">Guesses used</span><span class="dv">${3 - G.guessesLeft}/3</span></div>
+      <div class="dr"><span class="dk">Votes used</span><span class="dv">${G.impCount - G.votesLeft}/${G.impCount}</span></div>`;
+  } else if (G.mode === 'imposter') {
     rows += `<div class="dr"><span class="dk">${imps.length > 1 ? 'Imposters were' : 'Imposter was'}</span><span class="dv">${imps.map(p => p.name).join(', ')}</span></div>`;
   } else {
     rows += `<div class="dr"><span class="dk">Cuckoo word</span><span class="dv">${G.entry.w[1]}</span></div>
@@ -672,8 +698,8 @@ export function showGameOver() {
   let prHTML = '';
   G.players.forEach(p => {
     const isCk = G.mode === 'cuckoo' && p.isCuckoo;
-    const isImp = G.mode === 'imposter' && p.isImposter;
-    const wordDisplay = isImp ? '—' : p.word;
+    const isImp = (G.mode === 'imposter' || G.mode === 'reverse') && p.isImposter;
+    const wordDisplay = G.mode === 'reverse' ? (isImp ? G.secretWord : `Hint ${p.hintGroup}`) : (isImp ? '—' : p.word);
     const badge = isCk
       ? `<span style="font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:2px 8px;border-radius:99px;background:rgba(45,212,191,.2);color:var(--teal);border:1px solid var(--teal)">CUCKOO</span>`
       : isImp
