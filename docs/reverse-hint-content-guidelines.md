@@ -34,13 +34,14 @@ group). Full target: **no repeated hint through a 7-player game** — i.e.
 × 2 values each. Games longer than 7 cycles (8+ players) are allowed to
 start repeating earlier hints; that's expected and fine, not a bug.
 
-**Batch 1 (current)** authors only **8 hints per word** — a smaller
-first-iteration sample, not yet the full 14. This comfortably covers
-no-repeat freshness through a 4-player/4-cycle game; larger tables will
-start wrapping and repeating sooner than the full target until more
-hints are added per word in a later batch. Runtime handles any pool size
-generically (see Group Rotation below), so topping up to 14 later is
-just adding more entries, no code change needed.
+**Current state: all 99 words have 8 hints each**, not yet the full 14.
+This comfortably covers no-repeat freshness through a 4-player/4-cycle
+game; larger tables will start wrapping and repeating sooner than the
+full target until more hints are added per word. Runtime handles any
+pool size generically (see Group Rotation below), so topping up to 14
+later is just adding more entries per word, no code change needed —
+deliberately deferred rather than doubling the authoring effort before
+getting real playtest feedback on the 8-hint version.
 
 ## The Broadness Principle ("4-piece puzzle")
 
@@ -122,8 +123,15 @@ without any authored entry yet fall back to the original
 ## Data Storage
 
 `src/reverseHints.js`, keyed by secret word (matching `w[0]` strings
-exactly), each value an array of `{ theme, hint }` objects (8 for Batch
-1 words, target 14 eventually). Kept separate from `words.js` —
-additive, doesn't touch the existing tested word-pair structure used by
-Standard/Cuckoo. Only 21 of 99 words have entries so far (Batch 1: 3
-words per category) — the rest use the placeholder until later batches.
+exactly — a key that doesn't match a real `w[0]` is dead data and will
+never be picked; verify with a quick script when editing, see the repo's
+recent history for an example, since this bit us once already with
+"Cheese," which only ever appears as `w[1]`). Each value is an array of
+8 `{ theme, hint }` objects. Kept separate from `words.js` — additive,
+doesn't touch the existing tested word-pair structure used by
+Standard/Cuckoo.
+
+**All 99/99 words have entries.** The placeholder (`Hint {cycle}{group}`)
+only remains as a defensive fallback in `ui.js` for words that might lose
+their entry in a future edit — it shouldn't normally be seen in play
+anymore.

@@ -190,8 +190,9 @@ describe('buildGameData — reverse mode', () => {
     expect(G._endResult).toBeNull();
   });
 
-  it('hintPool is empty for a word with no authored hints (e.g. Lion)', () => {
-    const G = buildGameData('reverse', players5, entry);
+  it('hintPool is empty for a word with no authored hints (defensive fallback — all 99 real words currently have hints)', () => {
+    const unauthoredEntry = { cat: 'Animal', w: ['ZzzNotARealWord', 'Whatever'] };
+    const G = buildGameData('reverse', players5, unauthoredEntry);
     expect(G.hintPool).toEqual([]);
   });
 
