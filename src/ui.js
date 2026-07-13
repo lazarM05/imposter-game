@@ -676,11 +676,16 @@ export function showGameOver() {
     players_win_vote: '🏆', players_win_guess: '🎯', imposter_win_cycle: '🕵️', imposter_win_guesses: '🕵️' };
   const titles = { players_win: 'PLAYERS WIN!', imposter_wins: 'IMPOSTER WINS!', imposter_guessed: 'IMPOSTER WINS!', cuckoo_wins: 'CUCKOOS WIN!', no_result: 'ROUND OVER', tied: 'TIED VOTE',
     players_win_vote: 'PLAYERS WIN!', players_win_guess: 'PLAYERS WIN!', imposter_win_cycle: 'IMPOSTERS WIN!', imposter_win_guesses: 'IMPOSTERS WIN!' };
-  const colors = { players_win: 'var(--teal)', imposter_wins: 'var(--accent)', imposter_guessed: 'var(--accent)', cuckoo_wins: 'var(--teal)', no_result: 'var(--purple)', tied: 'var(--yellow)',
-    players_win_vote: 'var(--yellow)', players_win_guess: 'var(--yellow)', imposter_win_cycle: 'var(--accent)', imposter_win_guesses: 'var(--accent)' };
+  // Win-screen color rule (see docs/color-system.md): players winning always
+  // shows the current mode's theme color; antagonists (imposter/cuckoo)
+  // winning is always red, regardless of mode — red = imposter, fixed.
+  const NEUTRAL_COLORS = { no_result: 'var(--purple)', tied: 'var(--yellow)' };
+  const ANTAGONIST_WIN = new Set(['imposter_wins', 'imposter_guessed', 'cuckoo_wins', 'imposter_win_cycle', 'imposter_win_guesses']);
   document.getElementById('go-icon').textContent = icons[result] || '🎭';
   document.getElementById('go-title').textContent = titles[result] || 'GAME OVER';
-  document.getElementById('go-title').style.color = colors[result] || 'var(--text)';
+  document.getElementById('go-title').style.color = ANTAGONIST_WIN.has(result)
+    ? 'var(--accent)'
+    : (NEUTRAL_COLORS[result] || 'var(--mode-color)');
   document.getElementById('go-sub').textContent = `After ${G.cycle} cycle${G.cycle !== 1 ? 's' : ''} with ${G.players.length} players.`;
   const imps = G.mode !== 'cuckoo' ? G.players.filter(p => p.isImposter) : [];
   const cks = G.mode === 'cuckoo' ? G.players.filter(p => p.isCuckoo) : [];
