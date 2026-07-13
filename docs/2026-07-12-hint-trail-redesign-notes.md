@@ -1,5 +1,9 @@
 # Hint Trail Redesign — Session Notes (2026-07-12)
 
+> **Superseded / folded into** `docs/2026-07-13-hint-trail-redesign-spec.md`.
+> Kept here for historical reference only — the newer doc is the current
+> source of truth.
+
 Working notes from a design conversation reworking the "Hint Trail" mode (see
 `docs/Imposter-Cuckoo_HintTrail_GameMode.md`, the original spec). This is
 **not yet a finished spec** — several mechanics are unresolved. Once the open

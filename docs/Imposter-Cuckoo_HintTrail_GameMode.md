@@ -1,6 +1,11 @@
 # Imposter/Cuckoo — "Hint Trail" Game Mode
 ### Design Document
 
+> **Superseded** by `docs/2026-07-13-hint-trail-redesign-spec.md`. The core
+> mechanic (impostors get a fake word and don't know the real one) was
+> reworked so impostors instead know the real secret word. Kept here for
+> historical reference.
+
 ## Concept Summary
 A cooperative-charades twist on the core Imposter/Cuckoo formula. Instead of impostors trying to blend in with a word they were given, the **secret word is never revealed to anyone** — including the impostors. Players collectively deduce it from hints, while impostors quietly try to steer the group toward a fake word instead.
 
