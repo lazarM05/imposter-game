@@ -1,4 +1,4 @@
-# Imposter/Cuckoo — Architectural Guide
+# Ruse — Architectural Guide
 
 A phone-passing, in-person party game of word-association social deduction ("Standard" and "Cuckoo" modes) for hangouts and groups — teenagers through all ages. Built solo, for friends first, with an eye toward publishing on the Google Play Store.
 
